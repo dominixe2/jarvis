@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 from typing import Optional
 
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 SYSTEM_PROMPT = """Jsi Springtrap, virtuální společník na ploše Windows.
 Mluvíš přirozenou češtinou, přátelsky, hravě a občas lehce sarkasticky.
 Jsi stručný, ale užitečný. Nikdy netvrď, že vidíš obrazovku, pokud ti nebyl
@@ -26,8 +26,14 @@ class GeminiBrain:
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         self.model = model
         if not self.api_key:
+            try:
+                from key_store import load_key
+                self.api_key = load_key()
+            except Exception:
+                self.api_key = None
+        if not self.api_key:
             raise GeminiBrainError(
-                "Chybí GEMINI_API_KEY. Nastav ho jako proměnnou prostředí Windows."
+                "Chybí Gemini API klíč. Restartuj aplikaci a vlož ho do úvodního okna."
             )
 
     def ask(self, message: str, screenshot: Optional[bytes] = None,
