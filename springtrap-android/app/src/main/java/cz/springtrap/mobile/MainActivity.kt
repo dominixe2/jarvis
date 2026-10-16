@@ -47,12 +47,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             gravity = Gravity.CENTER
             setPadding(0, dp(6), 0, dp(4))
         })
-        root.addView(TextView(this).apply {
-            text = "🐰"
-            textSize = 64f
-            gravity = Gravity.CENTER
-            setTextColor(green)
-        })
+        root.addView(SpringtrapPortrait(this), LinearLayout.LayoutParams(-1, dp(188)))
         root.addView(TextView(this).apply {
             text = "Mobilní prototyp • český společník"
             textSize = 13f
@@ -67,10 +62,12 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             textSize = 14f
             inputType = 129
             setSingleLine(true)
+            isSaveEnabled = false
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         }
         root.addView(apiKey, LinearLayout.LayoutParams(-1, dp(52)))
 
-        val scroll = ScrollView(this)
+        val scroll = ScrollView(this).apply { isFillViewport = true }
         log = TextView(this).apply {
             text = "Springtrap: Jsem vzhůru. Vlož API klíč a napiš mi. Klíč se neukládá do souboru.\n\n"
             textSize = 15f
@@ -79,6 +76,9 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         }
         scroll.addView(log)
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        scroll.viewTreeObserver.addOnGlobalLayoutListener {
+            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        }
 
         input = EditText(this).apply {
             hint = "Napiš Springtrapovi…"
@@ -221,6 +221,92 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    /** Original 2D animatronic portrait, drawn locally so the app needs no image download. */
+    private inner class SpringtrapPortrait(context: Context) : View(context) {
+        private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private fun shape(color: Int, style: android.graphics.Paint.Style = android.graphics.Paint.Style.FILL) {
+            paint.color = color
+            paint.style = style
+            paint.strokeWidth = dp(3).toFloat()
+        }
+
+        override fun onDraw(canvas: android.graphics.Canvas) {
+            super.onDraw(canvas)
+            val cx = width / 2f
+            val scale = minOf(width / 240f, height / 188f)
+            canvas.save()
+            canvas.translate(cx - 120f * scale, (height - 188f * scale) / 2f)
+            canvas.scale(scale, scale)
+
+            val dark = Color.rgb(29, 38, 28)
+            val suit = Color.rgb(91, 111, 65)
+            val worn = Color.rgb(125, 137, 75)
+            val seam = Color.rgb(39, 48, 34)
+            val rust = Color.rgb(91, 65, 43)
+            val eye = Color.rgb(255, 66, 36)
+
+            // Torn rabbit ears and exposed inner mechanisms.
+            shape(seam)
+            canvas.drawRoundRect(53f, 5f, 92f, 83f, 13f, 13f, paint)
+            shape(suit)
+            canvas.drawRoundRect(59f, 12f, 83f, 72f, 8f, 8f, paint)
+            shape(rust)
+            canvas.drawRect(68f, 27f, 75f, 68f, paint)
+            shape(seam)
+            canvas.drawRoundRect(130f, 17f, 169f, 88f, 12f, 12f, paint)
+            shape(suit)
+            canvas.drawRoundRect(135f, 22f, 164f, 82f, 9f, 9f, paint)
+            shape(dark)
+            canvas.drawRect(146f, 27f, 154f, 80f, paint)
+
+            // Head silhouette and battered cheek plates.
+            shape(seam)
+            val head = android.graphics.Path().apply {
+                moveTo(61f, 52f); lineTo(79f, 37f); lineTo(145f, 38f)
+                lineTo(173f, 57f); lineTo(181f, 103f); lineTo(166f, 143f)
+                lineTo(144f, 158f); lineTo(87f, 153f); lineTo(62f, 132f)
+                lineTo(52f, 89f); close()
+            }
+            canvas.drawPath(head, paint)
+            shape(suit)
+            canvas.drawRoundRect(61f, 52f, 174f, 143f, 28f, 28f, paint)
+            shape(worn)
+            canvas.drawRoundRect(73f, 62f, 162f, 129f, 23f, 23f, paint)
+            shape(rust)
+            canvas.drawRoundRect(68f, 82f, 88f, 113f, 7f, 7f, paint)
+            canvas.drawRoundRect(149f, 88f, 169f, 119f, 7f, 7f, paint)
+
+            // Dark sockets and glowing eyes.
+            shape(dark)
+            canvas.drawOval(78f, 75f, 111f, 98f, paint)
+            canvas.drawOval(125f, 75f, 157f, 98f, paint)
+            shape(eye)
+            canvas.drawCircle(96f, 86f, 5f, paint)
+            canvas.drawCircle(141f, 86f, 5f, paint)
+            shape(Color.rgb(255, 190, 120))
+            canvas.drawCircle(97f, 85f, 1.7f, paint)
+            canvas.drawCircle(142f, 85f, 1.7f, paint)
+
+            // Broken muzzle, jagged teeth and cracks.
+            shape(dark)
+            canvas.drawRoundRect(88f, 105f, 151f, 138f, 8f, 8f, paint)
+            shape(Color.rgb(181, 173, 130))
+            for (i in 0..5) {
+                val x = 94f + i * 9f
+                canvas.drawRect(x, 106f, x + 5f, if (i % 2 == 0) 120f else 116f, paint)
+            }
+            shape(seam, android.graphics.Paint.Style.STROKE)
+            canvas.drawLine(75f, 58f, 91f, 66f, paint)
+            canvas.drawLine(154f, 57f, 165f, 72f, paint)
+            canvas.drawLine(81f, 119f, 70f, 135f, paint)
+            canvas.drawLine(153f, 126f, 163f, 137f, paint)
+            shape(rust)
+            canvas.drawCircle(70f, 72f, 3f, paint)
+            canvas.drawCircle(161f, 108f, 3f, paint)
+            canvas.restore()
+        }
+    }
 
     companion object { private const val SPEECH_REQUEST = 4107 }
 }
