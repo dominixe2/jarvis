@@ -13,7 +13,7 @@ from brain.gemini_brain import GeminiBrain, GeminiBrainError
 class GeminiBrainTests(unittest.TestCase):
     def test_missing_key_is_clear_error(self):
         with patch.dict(os.environ, {}, clear=True):
-            with self.assertRaisesRegex(GeminiBrainError, "GEMINI_API_KEY"):
+            with self.assertRaisesRegex(GeminiBrainError, "Gemini API klíč"):
                 GeminiBrain(api_key=None)
 
     @patch("brain.gemini_brain.urllib.request.urlopen")
