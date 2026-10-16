@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 import os
 import sys
 import unittest
@@ -49,7 +50,7 @@ class GeminiBrainTests(unittest.TestCase):
     @patch("brain.gemini_brain.urllib.request.urlopen")
     def test_http_error_is_converted_to_clear_error(self, mock_urlopen):
         mock_urlopen.side_effect = HTTPError(
-            "https://example.test", 403, "Forbidden", {}, None
+            "https://example.test", 403, "Forbidden", {}, BytesIO(b"permission denied")
         )
         brain = GeminiBrain(api_key="test-key", model="test-model")
         with self.assertRaisesRegex(GeminiBrainError, "HTTP 403"):
