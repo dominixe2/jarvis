@@ -31,6 +31,7 @@ class SpringtrapApp:
         self.history = []
         self.busy = False
         self.speech_enabled = tk.BooleanVar(value=True)
+        self.active_character = "Springtrap"
         self._build_ui()
         self.root.after(100, self._poll_events)
         self._append("Springtrap", "Jsem vzhůru. Napiš mi, nebo použij hlas. Zatím jde o první Windows prototyp.")
@@ -42,9 +43,14 @@ class SpringtrapApp:
         top.pack(fill="x", padx=16, pady=(14, 4))
         tk.Label(top, text="SPRINGTRAP", font=("Segoe UI", 18, "bold"),
                  fg="#b8e986", bg="#101612").pack(side="left")
+        self.character_label = tk.Label(top, text="Postava: Springtrap", font=("Segoe UI", 9),
+                                         fg="#d8e4d7", bg="#101612")
+        self.character_label.pack(side="right", padx=(8, 12))
+        tk.Button(top, text="🎮 Knihovna postav", command=self.open_character_library,
+                  bg="#293a2c", fg="white", relief="flat", padx=10, pady=5).pack(side="right")
         tk.Checkbutton(top, text="Přečíst odpovědi nahlas", variable=self.speech_enabled,
                        fg="#d8e4d7", bg="#101612", selectcolor="#25352a",
-                       activebackground="#101612", activeforeground="#ffffff").pack(side="right")
+                       activebackground="#101612", activeforeground="#ffffff").pack(side="right", padx=(0, 10))
 
         self.canvas = tk.Canvas(self.root, height=190, bg="#18221b", highlightthickness=0)
         self.canvas.pack(fill="x", padx=16, pady=8)
@@ -72,6 +78,118 @@ class SpringtrapApp:
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=8).pack(side="left", padx=(0, 6))
         tk.Button(controls, text="📸 Analyzovat obrazovku", command=self.analyze_screen,
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=8).pack(side="left")
+
+    def open_character_library(self):
+        """Open a searchable-by-franchise starter library; artwork/models are not bundled."""
+        games = {
+            "Five Nights at Freddy's (všechny díly)": [
+                "Springtrap", "Freddy Fazbear", "Bonnie", "Chica", "Foxy",
+                "The Puppet", "Circus Baby", "Ennard", "Glamrock Freddy",
+                "Roxanne Wolf", "The Mimic"
+            ],
+            "Apex Legends": [
+                "Wraith", "Bangalore", "Bloodhound", "Lifeline", "Pathfinder",
+                "Octane", "Mirage", "Revenant", "Valkyrie", "Conduit"
+            ],
+            "Fortnite": [
+                "Jonesy", "Peely", "The Foundation", "Midas", "Meowscles",
+                "Fishstick", "Raven", "Hope", "The Ageless", "The Visitor"
+            ],
+            "VALORANT": [
+                "Jett", "Phoenix", "Sage", "Reyna", "Omen", "Sova",
+                "Killjoy", "Raze", "Chamber", "Clove"
+            ],
+            "Half-Life": [
+                "Gordon Freeman", "Alyx Vance", "G-Man", "Barney Calhoun",
+                "Dr. Kleiner", "Dog", "Combine Soldier", "Vortigaunt"
+            ],
+            "Overwatch": [
+                "Tracer", "D.Va", "Reaper", "Soldier: 76", "Mercy",
+                "Genji", "Widowmaker", "Junkrat", "Kiriko", "Ramattra"
+            ],
+            "Resident Evil": [
+                "Leon S. Kennedy", "Jill Valentine", "Claire Redfield",
+                "Ada Wong", "Chris Redfield", "Nemesis", "Albert Wesker",
+                "Lady Dimitrescu", "Ethan Winters"
+            ],
+            "Cyberpunk 2077": [
+                "V", "Johnny Silverhand", "Judy Alvarez", "Panam Palmer",
+                "Jackie Welles", "Songbird", "Adam Smasher"
+            ],
+            "DOOM": [
+                "Doom Slayer", "Samuel Hayden", "VEGA", "The Icon of Sin",
+                "Marauder", "Cyberdemon"
+            ],
+            "Mortal Kombat": [
+                "Scorpion", "Sub-Zero", "Liu Kang", "Kitana", "Raiden",
+                "Johnny Cage", "Mileena", "Reptile", "Noob Saibot"
+            ],
+        }
+        win = tk.Toplevel(self.root)
+        win.title("Herní knihovna postav")
+        win.geometry("700x500")
+        win.configure(bg="#101612")
+        win.transient(self.root)
+
+        tk.Label(win, text="HERNÍ KNIHOVNA", font=("Segoe UI", 16, "bold"),
+                 fg="#b8e986", bg="#101612").pack(anchor="w", padx=16, pady=(14, 2))
+        tk.Label(win, text="10 herních světů • výběr mění osobnost Gemini, ne 3D model",
+                 font=("Segoe UI", 9), fg="#a7b7a4", bg="#101612").pack(anchor="w", padx=16, pady=(0, 10))
+        body = tk.Frame(win, bg="#101612")
+        body.pack(fill="both", expand=True, padx=16, pady=4)
+        left = tk.Frame(body, bg="#101612")
+        left.pack(side="left", fill="y", padx=(0, 10))
+        right = tk.Frame(body, bg="#101612")
+        right.pack(side="left", fill="both", expand=True)
+        tk.Label(left, text="Hry", fg="#d8e4d7", bg="#101612").pack(anchor="w")
+        game_list = tk.Listbox(left, width=31, exportselection=False, bg="#202b22",
+                               fg="white", selectbackground="#426d3d", relief="flat")
+        game_list.pack(fill="y", expand=True, pady=(4, 0))
+        tk.Label(right, text="Postavy", fg="#d8e4d7", bg="#101612").pack(anchor="w")
+        char_list = tk.Listbox(right, exportselection=False, bg="#202b22",
+                               fg="white", selectbackground="#426d3d", relief="flat")
+        char_list.pack(fill="both", expand=True, pady=(4, 8))
+        details = tk.Label(right, text="Vyber hru a postavu.", justify="left", anchor="w",
+                           wraplength=360, fg="#a7b7a4", bg="#101612")
+        details.pack(fill="x", pady=(0, 8))
+        for game in games:
+            game_list.insert("end", game)
+
+        def update_characters(_event=None):
+            selection = game_list.curselection()
+            if not selection:
+                return
+            game = game_list.get(selection[0])
+            char_list.delete(0, "end")
+            for character in games[game]:
+                char_list.insert("end", character)
+            details.configure(text=f"{game}\nVyber postavu a stiskni „Použít postavu“.")
+
+        def show_character(_event=None):
+            selection = char_list.curselection()
+            if selection:
+                details.configure(text=f"Vybraná postava: {char_list.get(selection[0])}\n"
+                                       "V této verzi se přepne konverzační role. Model, obrázky a "
+                                       "speciální animace se doplní samostatně.")
+
+        game_list.bind("<<ListboxSelect>>", update_characters)
+        char_list.bind("<<ListboxSelect>>", show_character)
+        game_list.selection_set(0)
+        update_characters()
+
+        def use_character():
+            selection = char_list.curselection()
+            if not selection:
+                messagebox.showinfo("Vyber postavu", "Nejdřív vyber postavu ze seznamu.", parent=win)
+                return
+            self.active_character = char_list.get(selection[0])
+            self.character_label.configure(text=f"Postava: {self.active_character}")
+            self._append("Systém", f"Aktivní postava změněna na: {self.active_character}. "
+                                   "Zatím se mění konverzační role, ne vzhled avatara.")
+            win.destroy()
+
+        tk.Button(win, text="Použít postavu", command=use_character, bg="#426d3d",
+                  fg="white", relief="flat", padx=16, pady=8).pack(anchor="e", padx=16, pady=12)
 
     def _draw_avatar(self):
         c = self.canvas
@@ -127,7 +245,13 @@ class SpringtrapApp:
                 context = "Dosavadní konverzace (nejnovější část):\n" + "\n".join(
                     f"{role}: {text}" for role, text in self.history[-12:]
                 ) + "\n\n"
-            reply = brain.ask(context + message, screenshot=screenshot)
+            character_instruction = (
+                f"\n\nRežim vybrané postavy: vystupuj jako {self.active_character}. "
+                "Zachovej její obecně známou atmosféru a osobnost, ale neříkej, že jsi skutečná "
+                "postava nebo že ovládáš hru. Odpovídej česky. Pokud jde o postavu z cizí série, "
+                "jde o fanouškovské hraní role; nepředstírej, že máš její oficiální hlas nebo model.\n\n"
+            )
+            reply = brain.ask(character_instruction + context + message, screenshot=screenshot)
             self.history.extend([("Uživatel", message), ("Springtrap", reply)])
             self.events.put(("reply", reply))
         except GeminiBrainError as exc:
