@@ -141,12 +141,25 @@ class SpringtrapApp:
         try:
             while True:
                 kind, payload = self.events.get_nowait()
-                self._set_busy(False)
-                if kind == "reply":
+                if kind == "heard":
+                    self.entry.configure(state="normal")
+                    self.entry.delete(0, "end")
+                    self.entry.insert(0, payload)
+                    self._append("Rozpoznaná řeč", payload)
+                    self.send_text()
+                elif kind == "screen":
+                    self._append("Ty", "[Povolil jsem analýzu obrazovky]")
+                    self._ask_async(
+                        "Popiš, co je na snímku obrazovky, a upozorni mě na důležité prvky. Nepředstírej akce.",
+                        payload
+                    )
+                elif kind == "reply":
+                    self._set_busy(False)
                     self._append("Springtrap", payload)
                     if self.speech_enabled.get():
                         threading.Thread(target=self._speak, args=(payload,), daemon=True).start()
-                else:
+                elif kind == "error":
+                    self._set_busy(False)
                     self._append("Systém", payload)
         except queue.Empty:
             pass
@@ -240,39 +253,6 @@ def main():
     root = tk.Tk()
     app = SpringtrapApp(root)
     root.protocol("WM_DELETE_WINDOW", app.close)
-
-    original_poll = app._poll_events
-    def poll_with_extra_events():
-        try:
-            while True:
-                kind, payload = app.events.get_nowait()
-                if kind == "heard":
-                    app.entry.delete(0, "end")
-                    app.entry.insert(0, payload)
-                    app._append("Rozpoznaná řeč", payload)
-                    app.send_text()
-                elif kind == "screen":
-                    app._append("Ty", "[Povolil jsem analýzu obrazovky]")
-                    app._ask_async("Popiš, co je na snímku obrazovky, a upozorni mě na důležité prvky. Nepředstírej akce.", payload)
-                elif kind == "reply":
-                    app._set_busy(False)
-                    app._append("Springtrap", payload)
-                    if app.speech_enabled.get():
-                        threading.Thread(target=app._speak, args=(payload,), daemon=True).start()
-                elif kind == "error":
-                    app._set_busy(False)
-                    app._append("Systém", payload)
-        except queue.Empty:
-            pass
-        root.after(100, poll_with_extra_events)
-    root.after_cancel
-    # Replace the regular queue poller with one that handles microphone and screenshot events too.
-    for after_id in root.tk.call("after", "info").split():
-        try:
-            root.after_cancel(after_id)
-        except tk.TclError:
-            pass
-    root.after(100, poll_with_extra_events)
     root.mainloop()
 
 
