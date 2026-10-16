@@ -82,6 +82,33 @@ Click **INITIALISE**, allow the microphone when asked, and say **"Hey Jarvis"**.
 
 ---
 
+## Test with Gemini Flash (local PC)
+
+If you want to use your own Gemini API key instead of the default Claude Code
+bridge, you can run the interface directly against Gemini Flash for local
+testing. This path answers questions and streams speech, but does not expose
+the bridge's local MCP tools or computer-control actions yet.
+
+1. Install Node.js 20 or newer.
+2. Download this repository and open a terminal in its folder.
+3. Run `npm install`.
+4. Copy `.env.example` to `.env.local`.
+5. In `.env.local`, set these two lines:
+
+   ```dotenv
+   VITE_BACKEND=gemini
+   VITE_GEMINI_API_KEY=PASTE_YOUR_GEMINI_API_KEY_HERE
+   ```
+
+6. Run `npm run dev` and open the local URL it prints in Chrome or Edge.
+7. Click **INITIALISE**, allow microphone access, and say **"Hey Jarvis"**.
+
+Create or manage the key in [Google AI Studio](https://aistudio.google.com/apikey).
+Do not paste the key into chat or commit it to GitHub. Because Vite exposes
+`VITE_*` variables in the browser bundle, this mode is for localhost testing
+only, not public deployment. The key is read when the app starts, so restart
+the dev server after changing `.env.local`.
+
 ## How it works
 
 JARVIS is two processes. The browser is the face and the voice; the bridge is
