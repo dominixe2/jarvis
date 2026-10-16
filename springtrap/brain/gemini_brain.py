@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 from typing import Optional
 
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 SYSTEM_PROMPT = """Jsi Springtrap, virtuální společník na ploše Windows.
 Mluvíš přirozenou češtinou, přátelsky, hravě a občas lehce sarkasticky.
 Jsi stručný, ale užitečný. Nikdy netvrď, že vidíš obrazovku, pokud ti nebyl
