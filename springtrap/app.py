@@ -8,6 +8,7 @@ from tkinter import messagebox, scrolledtext
 from pathlib import Path
 
 from brain.gemini_brain import GeminiBrain, GeminiBrainError
+from key_store import load_key, save_key
 
 APP_DIR = Path(__file__).resolve().parent
 PS = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command"]
@@ -23,20 +24,28 @@ def powershell(script, timeout=60):
 class SpringtrapApp:
     def __init__(self, root):
         self.root = root
+        self.root.withdraw()
         self.root.title("Springtrap")
-        self.root.geometry("780x700")
+        self.root.geometry("1000x760")
         self.root.minsize(620, 560)
         self.root.configure(bg="#101612")
+        self.api_key = load_key()
+        if not self.api_key:
+            self.api_key = self._api_key_dialog(startup=True)
+        if not self.api_key:
+            self.root.destroy()
+            raise SystemExit("Springtrap potřebuje Gemini API klíč pro spuštění.")
         self.events = queue.Queue()
         self.history = []
         self.busy = False
         self.speech_enabled = tk.BooleanVar(value=True)
         self.active_character = "Springtrap"
         self._build_ui()
+        self.root.state("zoomed")
+        self.root.deiconify()
         self.root.after(100, self._poll_events)
         self._append("Springtrap", "Jsem vzhůru. Napiš mi, nebo použij hlas. Zatím jde o první Windows prototyp.")
-        if not os.getenv("GEMINI_API_KEY"):
-            self._append("Systém", "Chybí GEMINI_API_KEY. Nastav ho podle README a aplikaci spusť znovu.")
+        self._append("Systém", "API klíč je uložen šifrovaně pro tento účet Windows. Změnit ho můžeš tlačítkem 🔑 API klíč.")
 
     def _build_ui(self):
         top = tk.Frame(self.root, bg="#101612")
@@ -46,6 +55,8 @@ class SpringtrapApp:
         self.character_label = tk.Label(top, text="Postava: Springtrap", font=("Segoe UI", 9),
                                          fg="#d8e4d7", bg="#101612")
         self.character_label.pack(side="right", padx=(8, 12))
+        tk.Button(top, text="🔑 API klíč", command=self.change_api_key,
+                  bg="#293a2c", fg="white", relief="flat", padx=10, pady=5).pack(side="right", padx=(0, 6))
         tk.Button(top, text="🎮 Knihovna postav", command=self.open_character_library,
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=5).pack(side="right")
         tk.Checkbutton(top, text="Přečíst odpovědi nahlas", variable=self.speech_enabled,
@@ -78,6 +89,65 @@ class SpringtrapApp:
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=8).pack(side="left", padx=(0, 6))
         tk.Button(controls, text="📸 Analyzovat obrazovku", command=self.analyze_screen,
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=8).pack(side="left")
+
+    def _api_key_dialog(self, startup=False):
+        """Large first-run/API-key window; the key is encrypted with Windows DPAPI."""
+        win = tk.Toplevel(self.root)
+        win.title("Nastavení Gemini API klíče")
+        win.configure(bg="#101612")
+        win.transient(self.root)
+        win.state("zoomed")
+        result = {"key": None}
+        tk.Label(win, text="SPRINGTRAP", font=("Segoe UI", 28, "bold"),
+                 fg="#b8e986", bg="#101612").pack(pady=(70, 8))
+        tk.Label(win, text="Vlož svůj Google Gemini API klíč",
+                 font=("Segoe UI", 19, "bold"), fg="#ffffff",
+                 bg="#101612").pack(pady=(10, 8))
+        tk.Label(win, text="Klíč se uloží šifrovaně pro tvůj účet Windows. Neukládej ho do GitHubu ani ho nikomu neposílej.",
+                 font=("Segoe UI", 11), fg="#a7b7a4", bg="#101612",
+                 wraplength=1000).pack(pady=(0, 28))
+        entry = tk.Entry(win, font=("Consolas", 22), show="●", relief="flat",
+                         bg="#202b22", fg="#ffffff", insertbackground="white")
+        entry.pack(fill="x", padx=70, ipady=22)
+        entry.focus_set()
+        status = tk.Label(win, text="", font=("Segoe UI", 11),
+                          fg="#e8c77a", bg="#101612")
+        status.pack(pady=12)
+
+        def save_and_close():
+            value = entry.get().strip()
+            if not value:
+                status.configure(text="Vlož API klíč, než budeš pokračovat.")
+                return
+            try:
+                save_key(value)
+            except Exception as exc:
+                status.configure(text=f"Uložení se nezdařilo: {exc}")
+                return
+            result["key"] = value
+            win.destroy()
+
+        buttons = tk.Frame(win, bg="#101612")
+        buttons.pack(pady=22)
+        tk.Button(buttons, text="Uložit klíč a spustit Springtrap",
+                  command=save_and_close, font=("Segoe UI", 13, "bold"),
+                  bg="#426d3d", fg="white", relief="flat",
+                  padx=24, pady=14).pack(side="left", padx=8)
+        tk.Button(buttons, text="Zrušit", command=win.destroy,
+                  font=("Segoe UI", 12), bg="#293a2c", fg="white",
+                  relief="flat", padx=24, pady=14).pack(side="left", padx=8)
+        tk.Label(win, text="Klíč se při psaní nezobrazuje. Příště se okno už neukáže, dokud klíč nebude potřeba znovu nastavit.",
+                 font=("Segoe UI", 10), fg="#7e907b", bg="#101612").pack(pady=(24, 0))
+        win.bind("<Return>", lambda _event: save_and_close())
+        win.protocol("WM_DELETE_WINDOW", win.destroy)
+        self.root.wait_window(win)
+        return result["key"]
+
+    def change_api_key(self):
+        new_key = self._api_key_dialog(startup=False)
+        if new_key:
+            self.api_key = new_key
+            self._append("Systém", "Nový Gemini API klíč byl uložen šifrovaně.")
 
     def open_character_library(self):
         """Open a searchable-by-franchise starter library; artwork/models are not bundled."""
@@ -239,7 +309,7 @@ class SpringtrapApp:
 
     def _ask_worker(self, message, screenshot):
         try:
-            brain = GeminiBrain()
+            brain = GeminiBrain(api_key=self.api_key)
             context = ""
             if self.history:
                 context = "Dosavadní konverzace (nejnovější část):\n" + "\n".join(
