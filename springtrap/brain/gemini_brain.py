@@ -45,7 +45,7 @@ class GeminiBrain:
         body = {
             "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
             "contents": [{"role": "user", "parts": parts}],
-            "generationConfig": {"temperature": 0.8, "maxOutputTokens": 500},
+            "generationConfig": {"maxOutputTokens": 500},
         }
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
