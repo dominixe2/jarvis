@@ -3,6 +3,8 @@ import os
 import queue
 import subprocess
 import threading
+import webbrowser
+import sys
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
 from pathlib import Path
@@ -57,6 +59,8 @@ class SpringtrapApp:
         self.character_label.pack(side="right", padx=(8, 12))
         tk.Button(top, text="🔑 API klíč", command=self.change_api_key,
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=5).pack(side="right", padx=(0, 6))
+        tk.Button(top, text="🦾 3D avatar", command=self.open_3d_avatar,
+                  bg="#426d3d", fg="white", relief="flat", padx=10, pady=5).pack(side="right", padx=(0, 6))
         tk.Button(top, text="🎮 Knihovna postav", command=self.open_character_library,
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=5).pack(side="right")
         tk.Checkbutton(top, text="Přečíst odpovědi nahlas", variable=self.speech_enabled,
@@ -89,6 +93,22 @@ class SpringtrapApp:
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=8).pack(side="left", padx=(0, 6))
         tk.Button(controls, text="📸 Analyzovat obrazovku", command=self.analyze_screen,
                   bg="#293a2c", fg="white", relief="flat", padx=10, pady=8).pack(side="left")
+
+    def open_3d_avatar(self):
+        """Open the local interactive Three.js avatar viewer in the default browser."""
+        candidates = [
+            APP_DIR / "avatar-3d.html",
+            Path(getattr(sys, "_MEIPASS", APP_DIR)) / "avatar-3d.html",
+        ]
+        avatar_file = next((p for p in candidates if p.exists()), None)
+        if avatar_file is None:
+            messagebox.showerror(
+                "3D avatar není nalezen",
+                "Soubor avatar-3d.html chybí. Stáhni kompletní složku springtrap z větve springtrap-rewrite."
+            )
+            return
+        webbrowser.open(avatar_file.resolve().as_uri())
+        self._append("Systém", "Otevřel jsem 3D laboratoř v prohlížeči. Pro vykreslení je potřeba internetové připojení k načtení Three.js.")
 
     def _api_key_dialog(self, startup=False):
         """Large first-run/API-key window; the key is encrypted with Windows DPAPI."""
