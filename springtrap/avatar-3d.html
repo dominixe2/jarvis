@@ -33,8 +33,8 @@ header{position:fixed;top:18px;left:22px;z-index:2;pointer-events:none}h1{font-s
   <small>Táhni myší pro otočení. Model je procedurální originální prototyp, nikoli oficiální herní asset. Pro finální kvalitu bude následovat detailní mesh, rig a animace.</small>
 </div>
 <div id="hint">MYŠ: otočit · Kolečko: přiblížit<br>← →: otočení · T: mluvení</div>
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+<script src="https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.min.js"></script>
+<script>
 const canvas=document.querySelector('#scene');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
