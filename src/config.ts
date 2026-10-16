@@ -58,10 +58,10 @@ function flag(name: string, raw: unknown, fallback: boolean): boolean {
  *              deploys as a static site, but it needs VITE_ANTHROPIC_API_KEY in
  *              the bundle and only reaches remote HTTP MCP servers.
  */
-export const BACKEND: 'bridge' | 'direct' = choice(
+export const BACKEND: 'bridge' | 'direct' | 'gemini' = choice(
   'VITE_BACKEND',
   import.meta.env.VITE_BACKEND,
-  ['bridge', 'direct'] as const,
+  ['bridge', 'direct', 'gemini'] as const,
   'bridge',
 )
 
@@ -130,6 +130,8 @@ export const KOKORO_VOICE = choice(
 
 export const env = {
   anthropicKey: str(import.meta.env.VITE_ANTHROPIC_API_KEY) ?? '',
+  // For local-only testing. VITE_ values are exposed to the browser bundle.
+  geminiKey: str(import.meta.env.VITE_GEMINI_API_KEY) ?? '',
   elevenKey: str(import.meta.env.VITE_ELEVENLABS_API_KEY) ?? '',
   elevenVoiceId:
     str(import.meta.env.VITE_ELEVENLABS_VOICE_ID) ?? 'JBFqnCBsd6RMkjVDRZzb',
