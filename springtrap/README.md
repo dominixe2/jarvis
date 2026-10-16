@@ -21,3 +21,10 @@ Otevři `avatar-prototype.html` v prohlížeči. Obsahuje stylizovanou animovano
 3. Přidat hlasové vstupy/výstupy.
 4. Přidat výslovně povolené snímání obrazovky a analýzu na požádání.
 5. Přidat opatrné průběžné reakce a nastavení soukromí.
+
+
+## Windows desktop prototype
+
+Byl přidán první samostatný Windows GUI prototyp do [`app.py`](app.py). Podrobný návod ke spuštění, požadavkům, hlasu a soukromí je v [`README-WINDOWS.md`](README-WINDOWS.md). Stav a další milníky sleduje [`TODO.md`](TODO.md).
+
+Automatické kontroly syntaxe a offline testy jsou definované v [GitHub Actions workflow](../.github/workflows/springtrap-checks.yml). Jejich zelený výsledek neznamená, že byla aplikace spuštěna na tvém notebooku nebo že funguje API klíč.
