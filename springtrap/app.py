@@ -2,7 +2,6 @@
 import os
 import queue
 import subprocess
-import tempfile
 import threading
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
@@ -106,7 +105,6 @@ class SpringtrapApp:
         self.busy = busy
         self.send_button.configure(state="disabled" if busy else "normal")
         self.entry.configure(state="disabled" if busy else "normal")
-        self.canvas.itemconfigure if False else None
 
     def send_text(self):
         message = self.entry.get().strip()
