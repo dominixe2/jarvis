@@ -23,7 +23,7 @@ jobs:
         run: python -m pip install --upgrade pip pyinstaller
       - name: Build executable
         working-directory: springtrap
-        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name Springtrap app.py
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --add-data "avatar-3d.html;." --name Springtrap app.py
       - name: Upload Windows executable
         uses: actions/upload-artifact@v4
         with:
