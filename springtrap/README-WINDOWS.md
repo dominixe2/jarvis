@@ -16,9 +16,9 @@ První desktopový základ pro Windows 10/11. Používá Python a knihovny dodá
 - Gemini API key. Použití API může mít kvóty nebo náklady podle účtu a aktuálních podmínek.
 
 ## Spuštění
-1. Stáhni nebo naklonuj větev `springtrap-rewrite`.
-2. Otevři PowerShell ve složce `springtrap`.
-3. Nastav klíč jen v aktuálním okně PowerShellu (neposílej ho do chatu a nevkládej ho do GitHubu):
+1. Stáhni nebo naklonuj větev `springtrap-rewrite` a otevři složku `springtrap`.
+2. Nejjednodušší cesta: dvakrát klikni na `start-springtrap.bat`. Pokud klíč není nastavený, program si ho vyžádá v okně. Klíč se tímto skriptem neukládá do souboru.
+3. Alternativně otevři PowerShell ve složce `springtrap` a nastav klíč jen v aktuálním okně PowerShellu (neposílej ho do chatu a nevkládej ho do GitHubu):
    ```powershell
    $env:GEMINI_API_KEY = "SEM_VLOŽ SVŮJ KLÍČ"
    ```
