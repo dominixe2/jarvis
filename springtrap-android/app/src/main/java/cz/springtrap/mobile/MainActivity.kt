@@ -14,7 +14,6 @@ import android.widget.*
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
 import java.util.Locale
 import kotlin.concurrent.thread
 
@@ -146,14 +145,14 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private fun askGemini(key: String, prompt: String): String {
         val model = "gemini-3.8-flash"
-        val url = URL("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=" +
-            URLEncoder.encode(key, "UTF-8"))
+        val url = URL("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent")
         val connection = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 20000
             readTimeout = 45000
             doOutput = true
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            setRequestProperty("x-goog-api-key", key)
         }
         try {
             val body = JSONObject()
