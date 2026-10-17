@@ -378,15 +378,23 @@ class SpringtrapApp:
         self.root.after(100, self._poll_events)
 
     def _speak(self, text):
-        # Uses the Windows built-in speech synthesizer; installed Czech voices depend on Windows setup.
-        safe = text.replace("'", "''")
+        # Prefer a Czech Windows voice and slow the rate slightly for intelligibility.
+        # Pass text as Base64 UTF-8 so punctuation cannot break the PowerShell command.
+        import base64
+        encoded = base64.b64encode(text.encode("utf-8")).decode("ascii")
         script = (
             "Add-Type -AssemblyName System.Speech; "
+            "$text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + encoded + "')); "
             "$s=New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-            "$s.Speak('" + safe + "'); $s.Dispose()"
+            "$s.Rate=-1; "
+            "$v=$s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like 'cs*' } | Select-Object -First 1; "
+            "if ($v) { $s.SelectVoice($v.VoiceInfo.Name) }; "
+            "$s.Speak($text); $s.Dispose()"
         )
         try:
-            powershell(script, timeout=120)
+            result = powershell(script, timeout=120)
+            if result.returncode != 0:
+                self.events.put(("error", "Český hlas Windows se nepodařilo spustit. Zkontroluj v Nastavení Windows nainstalované hlasové balíčky; dostupné hlasy se liší podle systému."))
         except Exception:
             pass
 
@@ -396,8 +404,9 @@ class SpringtrapApp:
         self._append("Systém", "Poslouchám až 10 sekund. Windows může vyžadovat nastavený mikrofon a podporovaný jazyk rozpoznávání.")
         script = r"""
 Add-Type -AssemblyName System.Speech
-$r = New-Object System.Speech.Recognition.SpeechRecognitionEngine
+$culture = [Globalization.CultureInfo]::GetCultureInfo('cs-CZ')
 try {
+  $r = New-Object System.Speech.Recognition.SpeechRecognitionEngine($culture)
   $r.SetInputToDefaultAudioDevice()
   $g = New-Object System.Speech.Recognition.DictationGrammar
   $r.LoadGrammar($g)
@@ -406,7 +415,7 @@ try {
   $r.EndSilenceTimeout = [TimeSpan]::FromSeconds(1)
   $result = $r.Recognize([TimeSpan]::FromSeconds(10))
   if ($result) { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Write-Output $result.Text }
-} finally { $r.Dispose() }
+} catch { [Console]::Error.WriteLine($_.Exception.Message); exit 2 } finally { if ($r) { $r.Dispose() } }
 """
         def worker():
             try:
