@@ -19,7 +19,7 @@ Use Node.js 20 or newer. Install dependencies with `npm install`, then follow th
 
 ## Separate Springtrap project
 
-Springtrap's 3D character, animations, interaction logic, and character-specific AI belong in a different repository. Keep this JARVIS repository focused on the assistant HUD, voice loop, and computer-control bridge.
+Springtrap's 3D character, animations, interaction logic, and character-specific AI live in the separate [Springtrap repository](https://github.com/dominixe2/springtrap-). Keep this JARVIS repository focused on the assistant HUD, voice loop, and computer-control bridge.
 
 ## Security
 
