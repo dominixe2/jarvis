@@ -1,6 +1,8 @@
 name: JARVIS validation
 
 on:
+  schedule:
+    - cron: '23 6 * * 1'
   push:
     branches: [main]
   pull_request:
