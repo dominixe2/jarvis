@@ -5,7 +5,6 @@ import type { AskHandlers, Msg } from './anthropic'
  * Gemini Flash client. The API key stays in the local Node proxy and is never
  * sent to the browser. The proxy accepts requests only from JARVIS localhost origins.
  */
-const MODEL = 'gemini-2.5-flash'
 let active: AbortController | null = null
 
 function messageText(content: unknown): string {
