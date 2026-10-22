@@ -61,6 +61,15 @@ const LOCAL_TOOLS = [{
       },
     },
     {
+      name: 'open_local_file',
+      description: 'Open a specific document or media file the user explicitly asks to open. Only Desktop, Documents, and Downloads are allowed, and executable/script files are blocked.',
+      parameters: {
+        type: 'OBJECT',
+        properties: { path: { type: 'STRING', description: 'The full path of the specific file the user asked to open.' } },
+        required: ['path'],
+      },
+    },
+    {
       name: 'read_text_file',
       description: 'Read a small text file explicitly requested by the user. Only Desktop, Documents, and Downloads are allowed; supported formats are TXT, MD, CSV, LOG, JSON, and XML.',
       parameters: {
