@@ -62,7 +62,7 @@ export const BACKEND: 'bridge' | 'direct' | 'gemini' = choice(
   'VITE_BACKEND',
   import.meta.env.VITE_BACKEND,
   ['bridge', 'direct', 'gemini'] as const,
-  'bridge',
+  'gemini',
 )
 
 /**
