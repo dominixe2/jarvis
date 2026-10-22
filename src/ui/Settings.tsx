@@ -105,10 +105,11 @@ export function Settings() {
             onChange={(event) => void chooseBackend(event.target.value as 'bridge' | 'gemini')}
             style={{ width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', marginBottom: 12, background: '#06131b', color: '#d9fbff' }}
           >
-            <option value="bridge">Lokální bridge (Claude Code + nástroje)</option>
+            <option value="bridge">Claude Code bridge (placený tarif / API kredity)</option>
             <option value="gemini">Gemini 3.8 Flash (konverzace + základní ovládání PC)</option>
           </select>
           {status?.backend === 'gemini' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>Gemini umí otevřít povolené aplikace a weby, zobrazit základní stav PC a na požádání hledat nebo číst textové soubory ve složkách Plocha, Dokumenty a Stažené soubory. Rozšířené MCP nástroje jsou v bridge režimu a vyžadují přihlášení Claude Code.</p>}
+          {status?.backend === 'bridge' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#ffc477' }}>Claude Code není součástí bezplatného tarifu Claude. Vyžaduje placený tarif Pro nebo vyšší, případně účet Anthropic Console s účtovaným API. Použití může čerpat limity tarifu nebo placené kredity.</p>}
           <div style={{ fontSize: 12, marginBottom: 12 }}>
             <strong>Stav: </strong>
             {status ? (status.configured ? 'API klíč nastaven' : 'API klíč chybí') : 'kontroluji místní službu…'}
