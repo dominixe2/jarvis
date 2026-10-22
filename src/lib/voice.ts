@@ -123,7 +123,7 @@ function afterWake(text: string): string {
  * last word of a real request.
  */
 const CONTINUES =
-  /\b(and|or|but|so|because|since|if|when|while|that|which|who|whose|to|of|in|on|at|by|for|with|from|about|into|onto|over|under|between|through|the|a|an|my|your|his|her|its|our|their|is|are|was|were|be|been|do|does|did|have|has|had|can|could|would|should|will|shall|might|must|like|than|then|as|very|really|just|some|any|all|both|either|neither|ale|protože|když|jestli|že|který|která|které|kdo|co|kam|kde|do|od|z|ze|na|v|ve|u|s|se|si|pro|pod|nad|mezi|přes|ten|ta|to|můj|moje|tvoje|je|jsou|byl|byla|bylo|bude|budou|můžu|můžeš|může|můžeme|chci|chceš|chce|potřebuju|potřebuješ|má|mají|by|aby|takže|jenže|neboť|jako|než|pak|teď|tady|tam|nějaký|nějaká|nějaké|všechno|každý|něco|někdo|kterou|kterým|kterých|svůj|svá|své|vám|mi|mě|mně|ti|tě|ho|ji|jim|nám|vás|nich|těch)$/i
+  /\b(and|or|but|so|because|since|if|when|while|that|which|who|whose|to|of|in|on|at|by|for|with|from|about|into|onto|over|under|between|through|the|a|an|my|your|his|her|its|our|their|is|are|was|were|be|been|do|does|did|have|has|had|can|could|would|should|will|shall|might|must|like|than|then|as|very|really|just|some|any|all|both|either|neither|ale|protoze|kdyz|jestli|ze|ktery|ktera|ktere|kdo|co|kam|kde|do|od|z|ze|na|v|ve|u|s|se|si|pro|pod|nad|mezi|pres|ten|ta|to|muj|moje|tvoje|je|jsou|byl|byla|bylo|bude|budou|muzu|muzes|muze|muzeme|chci|chces|chce|potrebuju|potrebujes|ma|maji|by|aby|takze|jenze|nebot|jako|nez|pak|ted|tady|tam|nejaky|nejaka|nejake|vsechno|kazdy|neco|nekdo|kterou|kterym|kterych|svuj|sva|sve|vam|mi|me|mne|ti|te|ho|ji|jim|nam|vas|nich|tech)$/i
 
 /** Trailing punctuation a transcriber emits mid-thought. */
 const TRAILS = /[,;:–—-]$/
@@ -172,7 +172,8 @@ function holdFor(text: string): number {
   // An explicit terminator is the speaker telling us they are done.
   if (/[.!?]$/.test(text)) return 0
   if (TRAILS.test(text.trim())) return CONTINUE_MS
-  if (CONTINUES.test(words[words.length - 1])) return CONTINUE_MS
+  const lastWord = words[words.length - 1].toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+  if (CONTINUES.test(lastWord)) return CONTINUE_MS
   // One or two words is usually the start of something, not the whole of it —
   // except for the short commands that genuinely are complete.
   if (words.length <= 2 && !OVERRIDE.test(text)) return CONTINUE_MS
