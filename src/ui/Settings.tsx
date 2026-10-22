@@ -106,9 +106,9 @@ export function Settings() {
             style={{ width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', marginBottom: 12, background: '#06131b', color: '#d9fbff' }}
           >
             <option value="bridge">Lokální bridge (Claude Code + nástroje)</option>
-            <option value="gemini">Gemini 3.8 Flash (konverzace, bez PC nástrojů)</option>
+            <option value="gemini">Gemini 3.8 Flash (konverzace + základní ovládání PC)</option>
           </select>
-          {status?.backend === 'gemini' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#ffc477' }}>Gemini režim zatím zajišťuje konverzaci. Pro lokální ovládání počítače přepni na bridge; ten vyžaduje funkční přihlášení Claude Code.</p>}
+          {status?.backend === 'gemini' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>Gemini umí otevřít povolené aplikace a weby, zobrazit základní stav PC a na požádání hledat nebo číst textové soubory ve složkách Plocha, Dokumenty a Stažené soubory. Rozšířené MCP nástroje jsou v bridge režimu a vyžadují přihlášení Claude Code.</p>}
           <div style={{ fontSize: 12, marginBottom: 12 }}>
             <strong>Stav: </strong>
             {status ? (status.configured ? 'API klíč nastaven' : 'API klíč chybí') : 'kontroluji místní službu…'}
