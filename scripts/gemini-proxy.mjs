@@ -222,6 +222,15 @@ async function runPcTool(name, args = {}) {
     return { count: Array.isArray(processes) ? processes.length : 1, processes }
   }
   if (name === 'search_local_files') return searchFiles(args.folder, args.query)
+  if (name === 'open_local_file') {
+    if (process.platform !== 'win32') throw Object.assign(new Error('Otevírání místních souborů je dostupné jen ve Windows.'), { status: 501 })
+    const file = await safeFilePath(args.path)
+    const ext = file.slice(file.lastIndexOf('.')).toLowerCase()
+    const allowed = ['.txt', '.md', '.csv', '.log', '.json', '.xml', '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.mp3', '.wav', '.docx', '.xlsx', '.pptx', '.odt', '.ods', '.zip']
+    if (!allowed.includes(ext)) throw Object.assign(new Error('Tento typ souboru není povolen k otevření.'), { status: 400 })
+    await launchProcess('explorer.exe', [file])
+    return { ok: true, message: 'Soubor byl otevřen.', path: file }
+  }
   if (name === 'read_text_file') {
     if (process.platform !== 'win32') throw Object.assign(new Error('Čtení místních souborů je dostupné jen ve Windows.'), { status: 501 })
     const file = await safeFilePath(args.path)
