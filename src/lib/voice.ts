@@ -176,7 +176,7 @@ function holdFor(text: string): number {
   if (CONTINUES.test(lastWord)) return CONTINUE_MS
   // One or two words is usually the start of something, not the whole of it —
   // except for the short commands that genuinely are complete.
-  if (words.length <= 2 && !OVERRIDE.test(text)) return CONTINUE_MS
+  if (words.length <= 2 && !OVERRIDE.test(norm(text))) return CONTINUE_MS
   return SETTLE_MS
 }
 
@@ -270,7 +270,7 @@ const norm = (s: string) =>
  * would be the single most infuriating failure this file could have.
  */
 const OVERRIDE =
-  /\b(stop|wait|jarvis(?:i|e)?|cancel|enough|quiet|hold on|shut up|never ?mind|forget it|no|počkej|zastav|zruš|zrušit|dost|ticho|mlč|přestaň|stačí|nech toho|zapomeň|ne)\b/i
+  /\b(stop|wait|jarvis(?:i|e)?|cancel|enough|quiet|hold on|shut up|never ?mind|forget it|no|pockej|zastav|zrus|dost|ticho|mlc|prestan|staci|nech toho|zapomen|ne)\b/i
 
 /**
  * Words too common to be evidence of anything.
@@ -300,7 +300,7 @@ const STOP = new Set(
  */
 function isEcho(heard: string, spoken: string): boolean {
   if (!spoken) return false
-  if (OVERRIDE.test(heard)) return false
+  if (OVERRIDE.test(norm(heard))) return false
 
   const all = norm(heard).split(' ').filter(Boolean)
   if (!all.length) return true
@@ -730,7 +730,7 @@ function startBrowserVoice(h: VoiceHandlers): Voice {
       if (mode === 'guard') {
         // An override word cuts through everything below it — "stop" has to
         // work on the first syllable or it is not a stop button.
-        if (!OVERRIDE.test(full)) {
+        if (!OVERRIDE.test(norm(full))) {
           // His own first syllable, same as the premium path. This engine has
           // no energy gate, so without the clock the only defence is the word
           // count below, and a single clear word is exactly what leaks first.
