@@ -23,7 +23,7 @@ The launcher installs npm dependencies on first run. JARVIS currently runs local
 
 ## Backends and voice
 
-The default backend is Gemini 3.8 Flash, which has a free tier subject to Google's limits and includes a restricted set of local PC tools. The advanced Claude Code bridge is optional and exposes configured MCP integrations, but requires a working Claude Code login and may consume that account's plan or credits. Browser speech synthesis is the default voice output. Optional integrations such as Groq and Fish Audio must be implemented and tested before being advertised as available.
+The default backend is Gemini 3.8 Flash, which has a free API tier subject to Google's rate limits and includes a restricted set of local PC tools. Claude Code is not included in Claude's Free plan: its subscription access requires Pro (currently $20/month or $17/month with annual billing) or a higher eligible plan; a Claude Console account can use it with separately billed API tokens. The optional Claude Code bridge exposes configured MCP integrations, but may consume subscription limits or paid API credits. Keep Gemini selected if you want to avoid a Claude subscription. Browser speech synthesis is the default voice output. Optional integrations such as Groq and Fish Audio must be implemented and tested before being advertised as available.
 
 The default language is Czech. Browser speech recognition requests `cs-CZ`, and spoken output prefers an installed Czech system voice. For best results, use a current Chrome or Edge build and install a Czech speech voice in Windows if none is available. Wake-word recognition and the free browser voice path require an active internet connection in supported browsers.
 
