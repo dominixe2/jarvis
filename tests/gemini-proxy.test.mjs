@@ -85,7 +85,7 @@ test('status reports backend and never returns the stored API key', async () => 
   assert.match(response.headers.get('cache-control') || '', /no-store/)
   const body = await response.json()
   assert.equal(body.configured, false)
-  assert.equal(body.backend, 'bridge')
+  assert.equal(body.backend, 'gemini')
   assert.equal(typeof body.secureStorage, 'boolean')
   assert.equal('key' in body, false)
   assert.equal('apiKey' in body, false)
