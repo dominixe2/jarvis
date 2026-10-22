@@ -52,8 +52,8 @@ function loadKey() {
 function readBackend() {
   try {
     const raw = readFileSync(envFile, 'utf8')
-    const match = raw.match(/^\\s*VITE_BACKEND\\s*=\\s*(.*?)\\s*$/m)
-    return match?.[1]?.replace(/^(['"])(.*)\\1$/, '$2').trim() || 'bridge'
+    const match = raw.match(/^\s*VITE_BACKEND\s*=\s*(.*?)\s*$/m)
+    return match?.[1]?.replace(/^(['"])(.*)\1$/, '$2').trim() || 'bridge'
   } catch { return 'bridge' }
 }
 
@@ -61,11 +61,11 @@ function saveBackend(backend) {
   let raw = ''
   try { raw = readFileSync(envFile, 'utf8') } catch {}
   const line = `VITE_BACKEND=${backend}`
-  if (/^\\s*VITE_BACKEND\\s*=.*$/m.test(raw)) {
-    raw = raw.replace(/^\\s*VITE_BACKEND\\s*=.*$/m, line)
+  if (/^\s*VITE_BACKEND\s*=.*$/m.test(raw)) {
+    raw = raw.replace(/^\s*VITE_BACKEND\s*=.*$/m, line)
   } else {
     raw = raw.trimEnd()
-    raw += `${raw ? '\\n' : ''}${line}\\n`
+    raw += `${raw ? '\n' : ''}${line}\n`
   }
   writeFileSync(envFile, raw, 'utf8')
 }
