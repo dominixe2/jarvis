@@ -287,7 +287,7 @@ const STOP = new Set(
     'should will shall not no yes if then than as about into over under out up ' +
     'down one two three first second third now here there just very really got ' +
     'get have has had say said tell me okay ok well right ' +
-    'a ale nebo protože když jestli že který která které kdo co kam kde do od z ze na v ve u s se si pro pod nad mezi přes ten ta to můj moje tvoje je jsou byl byla bylo bude budou můžu můžeš může můžeme chci chceš chce potřebuju potřebuješ má mají by aby takže jenže neboť jako než pak teď tady tam nějaký nějaká nějaké všechno každý něco někdo kterou kterým kterých svůj svá své vám mi mě mně ti tě ho ji jim nám vás nich těch počkej zastav zruš dost ticho mlč přestaň stačí zapomeň').split(' '),
+    'a ale nebo protoze kdyz jestli ze ktery ktera ktere kdo co kam kde do od z ze na v ve u s se si pro pod nad mezi pres ten ta to muj moje tvoje je jsou byl byla bylo bude budou muzu muzes muze muzeme chci chces chce potrebuju potrebujes ma maji by aby takze jenze nebot jako nez pak ted tady tam nejaky nejaka nejake vsechno kazdy neco nekdo kterou kterym kterych svuj sva sve vam mi me mne ti te ho ji jim nam vas nich tech pockej zastav zrus dost ticho mlc prestan staci zapomen').split(' '),
 )
 
 /**
