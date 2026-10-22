@@ -98,6 +98,27 @@ test('rejects requests from an untrusted origin', async () => {
   assert.equal(response.status, 403)
 })
 
+test('local PC tool API returns basic system info and rejects arbitrary commands', async () => {
+  const info = await request('/api/pc/tool', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'get_system_info', args: {} }),
+  })
+  assert.equal(info.status, 200)
+  const result = (await info.json()).result
+  assert.equal(typeof result.platform, 'string')
+  assert.equal(typeof result.cpuCores, 'number')
+  assert.equal(typeof result.memoryTotalGiB, 'number')
+
+  const denied = await request('/api/pc/tool', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'run_shell', args: { command: 'whoami' } }),
+  })
+  assert.equal(denied.status, 400)
+  assert.match((await denied.json()).error, /není povolen|není povolený|povolen/i)
+})
+
 test('backend selector validates choices and persists only the selected mode', async () => {
   const invalid = await request('/api/backend', {
     method: 'POST',
