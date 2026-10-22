@@ -37,7 +37,7 @@ function runPowerShell(command, input = '') {
 
 function saveKey(key) {
   mkdirSync(keyDir, { recursive: true })
-  const script = "$ErrorActionPreference='Stop'; $plain=[Console]::In.ReadToEnd(); $secure=ConvertTo-SecureString -String $plain -AsPlainText -Force; $encrypted=ConvertFrom-SecureString -SecureString $secure; [Console]::Out.Write($encrypted)"
+  const script = "Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; $ErrorActionPreference='Stop'; $plain=[Console]::In.ReadToEnd(); $secure=ConvertTo-SecureString -String $plain -AsPlainText -Force; $encrypted=ConvertFrom-SecureString -SecureString $secure; [Console]::Out.Write($encrypted)"
   const encrypted = runPowerShell(script, key)
   if (!encrypted) throw new Error('Windows nevrátilo zašifrovaný klíč.')
   writeFileSync(keyFile, encrypted, { encoding: 'utf8', mode: 0o600 })
