@@ -43,7 +43,6 @@ function saveKey(key) {
 }
 
 function loadKey() {
-  if (process.env.GEMINI_API_KEY?.trim()) return process.env.GEMINI_API_KEY.trim()
   if (!existsSync(keyFile)) return ''
   const script = "$ErrorActionPreference='Stop'; $cipher=[System.IO.File]::ReadAllText($env:JARVIS_GEMINI_KEY_FILE); $secure=ConvertTo-SecureString -String $cipher; $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure); try { [Console]::Out.Write([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }"
   return runPowerShell(script)
@@ -74,7 +73,7 @@ const server = createServer(async (req, res) => {
 
   if (req.method === 'GET' && req.url === '/api/gemini/status') {
     return sendJson(res, 200, {
-      configured: Boolean(process.env.GEMINI_API_KEY?.trim() || existsSync(keyFile)),
+      configured: existsSync(keyFile),
       secureStorage: process.platform === 'win32',
       storage: process.platform === 'win32' ? 'Windows DPAPI' : 'Windows required',
     })
@@ -96,7 +95,7 @@ const server = createServer(async (req, res) => {
   if (req.method === 'DELETE' && req.url === '/api/gemini/key') {
     try {
       if (existsSync(keyFile)) unlinkSync(keyFile)
-      return sendJson(res, 200, { configured: Boolean(process.env.GEMINI_API_KEY?.trim()), secureStorage: process.platform === 'win32' })
+      return sendJson(res, 200, { configured: false, secureStorage: process.platform === 'win32' })
     } catch (error) {
       return sendJson(res, 500, { error: error instanceof Error ? error.message : 'Klíč se nepodařilo odebrat.' })
     }
