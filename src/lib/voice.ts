@@ -172,7 +172,7 @@ function holdFor(text: string): number {
   // An explicit terminator is the speaker telling us they are done.
   if (/[.!?]$/.test(text)) return 0
   if (TRAILS.test(text.trim())) return CONTINUE_MS
-  const lastWord = words[words.length - 1].toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+  const lastWord = words[words.length - 1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   if (CONTINUES.test(lastWord)) return CONTINUE_MS
   // One or two words is usually the start of something, not the whole of it —
   // except for the short commands that genuinely are complete.
