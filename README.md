@@ -25,6 +25,10 @@ The launcher installs npm dependencies on first run. JARVIS currently runs local
 
 The default backend is the Claude Code local bridge, which uses your existing Claude Code login and provides access to configured local MCP integrations. It is not a hosted service. Browser speech synthesis is the default voice output. Optional integrations such as Groq and Fish Audio must be implemented and tested before being advertised as available.
 
+The default language is Czech. Browser speech recognition requests `cs-CZ`, and spoken output prefers an installed Czech system voice. For best results, use a current Chrome or Edge build and install a Czech speech voice in Windows if none is available. Wake-word recognition and the free browser voice path require an active internet connection in supported browsers.
+
+To enable write-capable local tools in bridge mode, start from a terminal in the project folder with `npm start -- --writes`. This is an opt-in mode because the configured tools may run commands or modify files. Start without `--writes` for read-only operation. Do not expose the local bridge to the public internet.
+
 ### Gemini backend
 
 Run `npm start`, open **Settings**, choose the Gemini Flash backend, and enter the API key. Restart JARVIS after changing the backend so Vite reloads the saved setting. On Windows, the local Node service encrypts the key using Windows DPAPI for the current Windows account and stores only the encrypted value under the user profile. The key is never included in the Vite browser bundle. Requests are relayed through `127.0.0.1:8788`. Do not use `VITE_GEMINI_API_KEY` or store the key in a plaintext environment variable.
