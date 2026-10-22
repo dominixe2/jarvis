@@ -189,7 +189,9 @@ function score(v: SpeechSynthesisVoice): number {
   if (n.includes('premium')) s += 30
   else if (n.includes('enhanced')) s += 20
 
-  if (/en[-_]gb/i.test(v.lang)) s += 25
+  // Czech pronunciation is the priority; the British character comes second.
+  if (/^cs(?:[-_]|$)/i.test(v.lang)) s += 160
+  else if (/en[-_]gb/i.test(v.lang)) s += 25
   else if (/^en/i.test(v.lang)) s += 5
 
   // Voices that clearly aren't a butler.
@@ -212,7 +214,7 @@ const USABLE = 40
 export function candidateVoices(): SpeechSynthesisVoice[] {
   return speechSynthesis
     .getVoices()
-    .filter((v) => /^en/i.test(v.lang))
+    .filter((v) => /^(?:cs|en)(?:[-_]|$)/i.test(v.lang))
     .map((v) => ({ v, s: score(v) }))
     .filter((x) => x.s >= USABLE)
     .sort((a, b) => b.s - a.s)
@@ -231,12 +233,12 @@ function pickVoice(): SpeechSynthesisVoice | null {
   // if that voice is ever reinstalled.
   const saved = localStorage.getItem(VOICE_PREF_KEY)
   if (saved) {
-    const hit = all.find((v) => v.name === saved)
+    const hit = all.find((v) => v.name === saved && /^cs(?:[-_]|$)/i.test(v.lang))
     if (hit) return (cachedVoice = hit)
     localStorage.removeItem(VOICE_PREF_KEY)
   }
 
-  cachedVoice = candidateVoices()[0] ?? all.find((v) => /^en/i.test(v.lang)) ?? null
+  cachedVoice = candidateVoices()[0] ?? all.find((v) => /^cs(?:[-_]|$)/i.test(v.lang)) ?? all.find((v) => /^en/i.test(v.lang)) ?? null
   return cachedVoice
 }
 
@@ -477,7 +479,7 @@ export function createSpeaker(): Speaker {
       const u = new SpeechSynthesisUtterance(text)
       const voice = pickVoice()
       if (voice) u.voice = voice
-      u.lang = voice?.lang ?? 'en-GB'
+      u.lang = voice?.lang ?? 'cs-CZ'
       // Deliberate, and deliberately invariant — the character's pace does not
       // change with stakes, and that steadiness is most of the effect. This
       // lands around 130 wpm, below the median for film dialogue.
