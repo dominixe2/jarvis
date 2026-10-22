@@ -168,8 +168,9 @@ export async function ask(
           }
           if (part.functionCall?.name) {
             const call = part.functionCall
-            const existing = calls.get(call.name)
-            calls.set(call.name, {
+            const callKey = call.id || call.name
+            const existing = calls.get(callKey)
+            calls.set(callKey, {
               name: call.name,
               args: { ...(existing?.args ?? {}), ...(call.args ?? {}) },
               ...(call.id ? { id: call.id } : existing?.id ? { id: existing.id } : {}),
