@@ -78,7 +78,7 @@ const WAKE_DEBOUNCE = 1500
  * indication why. Better a rare false wake than a name that does not answer.
  */
 const WAKE =
-  /\b(?:hey|hi|ok|okay|yo)?\s*(?:jarvis|jarvys|jervis|jarvis's|travis|jarviss|java's|jarv)\b(?!'s)/i
+  /\b(?:hey|hi|ok|okay|yo)?\s*(?:jarvis(?:i|e)?|jarvys|jervis(?:i|e)?|jarvis's|travis|jarviss|java's|jarv)\b(?!'s)/i
 
 /** Everything after the wake phrase, which is usually the actual command. */
 function afterWake(text: string): string {
@@ -123,7 +123,7 @@ function afterWake(text: string): string {
  * last word of a real request.
  */
 const CONTINUES =
-  /\b(and|or|but|so|because|since|if|when|while|that|which|who|whose|to|of|in|on|at|by|for|with|from|about|into|onto|over|under|between|through|the|a|an|my|your|his|her|its|our|their|is|are|was|were|be|been|do|does|did|have|has|had|can|could|would|should|will|shall|might|must|like|than|then|as|very|really|just|some|any|all|both|either|neither)$/i
+  /\b(and|or|but|so|because|since|if|when|while|that|which|who|whose|to|of|in|on|at|by|for|with|from|about|into|onto|over|under|between|through|the|a|an|my|your|his|her|its|our|their|is|are|was|were|be|been|do|does|did|have|has|had|can|could|would|should|will|shall|might|must|like|than|then|as|very|really|just|some|any|all|both|either|neither|ale|protože|když|jestli|že|který|která|které|kdo|co|kam|kde|do|od|z|ze|na|v|ve|u|s|se|si|pro|pod|nad|mezi|přes|ten|ta|to|můj|moje|tvoje|je|jsou|byl|byla|bylo|bude|budou|můžu|můžeš|může|můžeme|chci|chceš|chce|potřebuju|potřebuješ|má|mají|by|aby|takže|jenže|neboť|jako|než|pak|teď|tady|tam|nějaký|nějaká|nějaké|všechno|každý|něco|někdo|kterou|kterým|kterých|svůj|svá|své|vám|mi|mě|mně|ti|tě|ho|ji|jim|nám|vás|nich|těch)$/i
 
 /** Trailing punctuation a transcriber emits mid-thought. */
 const TRAILS = /[,;:–—-]$/
@@ -257,6 +257,8 @@ function makeAssembler(h: {
 const norm = (s: string) =>
   s
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9' ]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -267,7 +269,7 @@ const norm = (s: string) =>
  * would be the single most infuriating failure this file could have.
  */
 const OVERRIDE =
-  /\b(stop|wait|jarvis|cancel|enough|quiet|hold on|shut up|never ?mind|forget it|no)\b/i
+  /\b(stop|wait|jarvis(?:i|e)?|cancel|enough|quiet|hold on|shut up|never ?mind|forget it|no|počkej|zastav|zruš|zrušit|dost|ticho|mlč|přestaň|stačí|nech toho|zapomeň|ne)\b/i
 
 /**
  * Words too common to be evidence of anything.
@@ -284,7 +286,8 @@ const STOP = new Set(
     'our their what which who how why when where do does did can could would ' +
     'should will shall not no yes if then than as about into over under out up ' +
     'down one two three first second third now here there just very really got ' +
-    'get have has had say said tell me okay ok well right').split(' '),
+    'get have has had say said tell me okay ok well right ' +
+    'a ale nebo protože když jestli že který která které kdo co kam kde do od z ze na v ve u s se si pro pod nad mezi přes ten ta to můj moje tvoje je jsou byl byla bylo bude budou můžu můžeš může můžeme chci chceš chce potřebuju potřebuješ má mají by aby takže jenže neboť jako než pak teď tady tam nějaký nějaká nějaké všechno každý něco někdo kterou kterým kterých svůj svá své vám mi mě mně ti tě ho ji jim nám vás nich těch počkej zastav zruš dost ticho mlč přestaň stačí zapomeň').split(' '),
 )
 
 /**
