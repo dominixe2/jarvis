@@ -54,7 +54,7 @@ function vendorWasm() {
 const writes = process.argv.includes('--writes')
 const backend = configuredBackend()
 const needsBridge = backend !== 'gemini' && backend !== 'direct'
-const needsGeminiProxy = backend === 'gemini'
+const needsGeminiProxy = true // also enables the settings panel to store a key before switching backends
 
 // A dim label per process, so the interleaved logs stay readable.
 const paint = (tag, colour) => (line) =>
