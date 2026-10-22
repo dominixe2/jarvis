@@ -116,12 +116,19 @@ const server = createServer(async (req, res) => {
     return sendJson(res, error.status || 400, { error: error instanceof Error ? error.message : 'Neplatný požadavek.' })
   }
 
+  const controller = new AbortController()
+  const abortUpstream = () => controller.abort()
+  req.on('aborted', abortUpstream)
+  res.on('close', () => {
+    if (!res.writableEnded) abortUpstream()
+  })
+
   try {
     const upstream = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.any([controller.signal, AbortSignal.timeout(120_000)]),
     })
     res.statusCode = upstream.status
     res.setHeader('Content-Type', upstream.headers.get('content-type') || 'application/json')
