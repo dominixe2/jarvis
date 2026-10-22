@@ -13,6 +13,7 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1'])
 const appData = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
 const keyDir = join(appData, 'JARVIS')
 const keyFile = join(keyDir, 'gemini-key.dpapi')
+const envFile = join(process.cwd(), '.env.local')
 
 function allowedOrigin(value) {
   if (!value) return false
@@ -48,6 +49,27 @@ function loadKey() {
   return runPowerShell(script)
 }
 
+function readBackend() {
+  try {
+    const raw = readFileSync(envFile, 'utf8')
+    const match = raw.match(/^\\s*VITE_BACKEND\\s*=\\s*(.*?)\\s*$/m)
+    return match?.[1]?.replace(/^(['"])(.*)\\1$/, '$2').trim() || 'bridge'
+  } catch { return 'bridge' }
+}
+
+function saveBackend(backend) {
+  let raw = ''
+  try { raw = readFileSync(envFile, 'utf8') } catch {}
+  const line = `VITE_BACKEND=${backend}`
+  if (/^\\s*VITE_BACKEND\\s*=.*$/m.test(raw)) {
+    raw = raw.replace(/^\\s*VITE_BACKEND\\s*=.*$/m, line)
+  } else {
+    raw = raw.trimEnd()
+    raw += `${raw ? '\\n' : ''}${line}\\n`
+  }
+  writeFileSync(envFile, raw, 'utf8')
+}
+
 function sendJson(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
   res.end(JSON.stringify(data))
@@ -76,7 +98,20 @@ const server = createServer(async (req, res) => {
       configured: existsSync(keyFile),
       secureStorage: process.platform === 'win32',
       storage: process.platform === 'win32' ? 'Windows DPAPI' : 'Windows required',
+      backend: readBackend(),
     })
+  }
+
+  if (req.method === 'POST' && req.url === '/api/backend') {
+    try {
+      const body = await readJson(req, 16_000)
+      const backend = body.backend
+      if (backend !== 'bridge' && backend !== 'gemini') return sendJson(res, 400, { error: 'Vyber režim bridge nebo gemini.' })
+      saveBackend(backend)
+      return sendJson(res, 200, { backend, restartRequired: true })
+    } catch (error) {
+      return sendJson(res, error.status || 500, { error: error instanceof Error ? error.message : 'Režim se nepodařilo uložit.' })
+    }
   }
 
   if (req.method === 'POST' && req.url === '/api/gemini/key') {
