@@ -25,11 +25,11 @@ function configuredBackend() {
   try {
     const file = readFileSync('.env.local', 'utf8')
     const match = file.match(/^\s*VITE_BACKEND\s*=\s*(.*?)\s*$/m)
-    if (!match) return 'bridge'
+    if (!match) return 'gemini'
     const value = match[1].replace(/^(['"])(.*)\1$/, '$2').trim().toLowerCase()
-    return value || 'bridge'
+    return value || 'gemini'
   } catch {
-    return 'bridge'
+    return 'gemini'
   }
 }
 
