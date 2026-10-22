@@ -139,14 +139,25 @@ export async function ask(
 
       if (!response.ok) {
         const detail = await response.text().catch(() => '')
-        let message = `Gemini API vrátilo chybu HTTP ${response.status}.`
+        let providerMessage = ''
         try {
           const parsed = JSON.parse(detail)
-          message = parsed?.error?.message || parsed?.error || message
+          providerMessage = typeof parsed?.error?.message === 'string' ? parsed.error.message : ''
         } catch {
-          if (detail) message += ` ${detail.slice(0, 300)}`
+          providerMessage = ''
         }
-        throw new Error(typeof message === 'string' ? message : JSON.stringify(message))
+        let message: string
+        if (response.status === 429) {
+          message = 'Bezplatná kvóta Gemini je vyčerpaná nebo je požadavek příliš častý. Zkus to za chvíli nebo zkontroluj limity v Google AI Studio.'
+        } else if ([400, 401, 403].includes(response.status)) {
+          message = 'Gemini odmítlo API klíč nebo nemá povolený tento model. Zkontroluj klíč v Nastavení a přístup v Google AI Studio.'
+        } else if (response.status >= 500) {
+          message = 'Služba Gemini je momentálně nedostupná. Zkus to znovu za chvíli.'
+        } else {
+          message = `Gemini hlásí chybu HTTP ${response.status}.`
+          if (providerMessage) message += ` ${providerMessage.slice(0, 220)}`
+        }
+        throw new Error(message)
       }
 
       if (!response.body) throw new Error('Gemini API nevrátilo stream odpovědi.')
