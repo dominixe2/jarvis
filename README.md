@@ -10,7 +10,7 @@ JARVIS is the standalone assistant project: a cyan holographic interface, voice 
 2. Download and extract the ZIP.
 3. Double-click `start-jarvis.bat`.
 4. Keep the terminal window open and open the local URL printed there.
-5. Click **INITIALISE**. Open **Settings** to configure the Gemini Flash backend and save your API key.
+5. Click **INITIALISE**. Open **Settings** to configure the Gemini 3.8 Flash backend and save your API key.
 
 The launcher installs npm dependencies on first run. JARVIS currently runs locally in Chrome or Edge with a Node service; this repository does **not yet provide a signed standalone Windows installer or a single-file EXE**.
 
@@ -31,7 +31,7 @@ To enable write-capable local tools in bridge mode, start from a terminal in the
 
 ### Gemini backend
 
-Run `npm start`, open **Settings**, choose the Gemini Flash backend, and enter the API key. Restart JARVIS after changing the backend so Vite reloads the saved setting. On Windows, the local Node service encrypts the key using Windows DPAPI for the current Windows account and stores only the encrypted value under the user profile. The key is never included in the Vite browser bundle. Requests are relayed through `127.0.0.1:8788`. Do not use `VITE_GEMINI_API_KEY` or store the key in a plaintext environment variable.
+Run `npm start`, open **Settings**, choose the Gemini 3.8 Flash backend, and enter the API key. Gemini 3.8 Flash has a free tier, subject to Google's model access and usage limits; check the current limits in AI Studio. Restart JARVIS after changing the backend so Vite reloads the saved setting. On Windows, the local Node service encrypts the key using Windows DPAPI for the current Windows account and stores only the encrypted value under the user profile. The key is never included in the Vite browser bundle. Requests are relayed through `127.0.0.1:8788`. Do not use `VITE_GEMINI_API_KEY` or store the key in a plaintext environment variable.
 
 Gemini mode provides model replies but does not currently provide the Claude bridge's local computer-control/MCP tools. API access, quotas, and any free allowance depend on Google's current terms.
 
