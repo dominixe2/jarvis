@@ -3,10 +3,10 @@
  * API keys never enter the Vite bundle or get written to plaintext files.
  */
 import { createServer } from 'node:http'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { cpus, freemem, homedir, platform, release, totalmem, uptime } from 'node:os'
+import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 
 const PORT = Number(process.env.JARVIS_GEMINI_PORT || 8788)
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1'])
@@ -113,6 +113,129 @@ function saveBackend(backend) {
   writeFileSync(envFile, raw, 'utf8')
 }
 
+const PC_APPS = {
+  notepad: { executable: 'notepad.exe', args: [] },
+  calculator: { executable: 'calc.exe', args: [] },
+  file_explorer: { executable: 'explorer.exe', args: [] },
+  task_manager: { executable: 'taskmgr.exe', args: [] },
+  settings: { executable: 'explorer.exe', args: ['ms-settings:'] },
+}
+
+function launchProcess(executable, args) {
+  return new Promise((resolveLaunch, rejectLaunch) => {
+    const child = spawn(executable, args, { detached: true, stdio: 'ignore', windowsHide: false })
+    child.once('error', rejectLaunch)
+    child.once('spawn', () => {
+      child.unref()
+      resolveLaunch({ ok: true, message: 'Aplikace byla spuštěna.' })
+    })
+  })
+}
+
+function allowedFileRoots() {
+  return ['Desktop', 'Documents', 'Downloads'].map((name) => join(homedir(), name))
+}
+
+function insideRoot(root, candidate) {
+  const rel = relative(root, candidate)
+  return rel === '' || (rel !== '..' && !rel.startsWith('..' + sep) && !isAbsolute(rel))
+}
+
+async function safeFilePath(input) {
+  if (typeof input !== 'string' || !input.trim() || input.length > 2048) {
+    throw Object.assign(new Error('Zadej platnou cestu k souboru.'), { status: 400 })
+  }
+  const candidate = resolve(input)
+  const root = allowedFileRoots().find((item) => insideRoot(resolve(item), candidate))
+  if (!root) throw Object.assign(new Error('Přístup je omezen na Plochu, Dokumenty a Stažené soubory.'), { status: 403 })
+  const actualRoot = await realpath(root).catch(() => resolve(root))
+  const actual = await realpath(candidate)
+  if (!insideRoot(actualRoot, actual)) throw Object.assign(new Error('Cesta vede mimo povolenou složku.'), { status: 403 })
+  return actual
+}
+
+async function searchFiles(folder, query) {
+  if (!['Desktop', 'Documents', 'Downloads'].includes(folder)) {
+    throw Object.assign(new Error('Prohledávat lze jen Plochu, Dokumenty a Stažené soubory.'), { status: 400 })
+  }
+  if (typeof query !== 'string' || !query.trim() || query.length > 120) {
+    throw Object.assign(new Error('Zadej krátký hledaný výraz.'), { status: 400 })
+  }
+  const root = join(homedir(), folder)
+  const needle = query.toLocaleLowerCase()
+  const results = []
+  async function walk(dir, depth) {
+    if (depth > 3 || results.length >= 40) return
+    let entries
+    try { entries = await (await import('node:fs/promises')).readdir(dir, { withFileTypes: true }) } catch { return }
+    for (const entry of entries) {
+      if (results.length >= 40) break
+      if (entry.name.startsWith('.')) continue
+      const full = join(dir, entry.name)
+      if (entry.isFile() && entry.name.toLocaleLowerCase().includes(needle)) results.push(full)
+      else if (entry.isDirectory()) await walk(full, depth + 1)
+    }
+  }
+  await walk(root, 0)
+  return { folder, count: results.length, results }
+}
+
+async function runPcTool(name, args = {}) {
+  if (name === 'get_system_info') {
+    const total = totalmem()
+    const free = freemem()
+    return {
+      platform: platform(),
+      osVersion: release(),
+      cpuCores: cpus().length,
+      memoryTotalGiB: Math.round(total / 1024 ** 3 * 10) / 10,
+      memoryFreeGiB: Math.round(free / 1024 ** 3 * 10) / 10,
+      uptimeHours: Math.round(uptime() / 360) / 10,
+    }
+  }
+  if (name === 'open_website') {
+    if (process.platform !== 'win32') throw Object.assign(new Error('Otevírání webu přes Windows je dostupné jen ve Windows.'), { status: 501 })
+    if (typeof args.url !== 'string' || args.url.length > 2048) throw Object.assign(new Error('Adresa webu není platná.'), { status: 400 })
+    let url
+    try { url = new URL(args.url) } catch { throw Object.assign(new Error('Adresa webu není platná.'), { status: 400 }) }
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+      throw Object.assign(new Error('Povoleny jsou jen běžné adresy HTTP nebo HTTPS.'), { status: 400 })
+    }
+    await launchProcess('rundll32.exe', ['url.dll,FileProtocolHandler', url.href])
+    return { ok: true, message: 'Webová stránka byla otevřena.', url: url.href }
+  }
+  if (name === 'open_application') {
+    if (process.platform !== 'win32') throw Object.assign(new Error('Spouštění aplikací je dostupné jen ve Windows.'), { status: 501 })
+    const app = PC_APPS[args.application]
+    if (!app) throw Object.assign(new Error('Tuto aplikaci nelze tímto nástrojem spustit.'), { status: 400 })
+    return await launchProcess(app.executable, app.args)
+  }
+  if (name === 'list_running_apps') {
+    if (process.platform !== 'win32') throw Object.assign(new Error('Seznam aplikací je dostupný jen ve Windows.'), { status: 501 })
+    const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Get-Process | Sort-Object ProcessName | Select-Object -First 40 ProcessName,Id,CPU | ConvertTo-Json -Compress'], {
+      encoding: 'utf8', windowsHide: true, timeout: 8000,
+    })
+    if (result.error) throw result.error
+    if (result.status !== 0) throw new Error((result.stderr || 'Seznam procesů se nepodařilo načíst.').trim().slice(0, 300))
+    let processes = []
+    try { processes = JSON.parse(result.stdout || '[]') } catch {}
+    return { count: Array.isArray(processes) ? processes.length : 1, processes }
+  }
+  if (name === 'search_local_files') return searchFiles(args.folder, args.query)
+  if (name === 'read_text_file') {
+    if (process.platform !== 'win32') throw Object.assign(new Error('Čtení místních souborů je dostupné jen ve Windows.'), { status: 501 })
+    const file = await safeFilePath(args.path)
+    const info = await (await import('node:fs/promises')).stat(file)
+    if (!info.isFile() || info.size > 100_000) throw Object.assign(new Error('Lze číst jen běžné textové soubory do 100 kB.'), { status: 400 })
+    const ext = file.slice(file.lastIndexOf('.')).toLowerCase()
+    if (!['.txt', '.md', '.csv', '.log', '.json', '.xml'].includes(ext)) {
+      throw Object.assign(new Error('Podporované typy jsou TXT, MD, CSV, LOG, JSON a XML.'), { status: 400 })
+    }
+    return { path: file, text: await (await import('node:fs/promises')).readFile(file, 'utf8') }
+  }
+  throw Object.assign(new Error('Tento lokální nástroj není povolen.'), { status: 400 })
+}
+
 function sendJson(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
   res.end(JSON.stringify(data))
@@ -143,6 +266,17 @@ const server = createServer(async (req, res) => {
       storage: process.platform === 'win32' ? 'Windows DPAPI' : 'Windows required',
       backend: readBackend(),
     })
+  }
+
+  if (req.method === 'POST' && req.url === '/api/pc/tool') {
+    try {
+      const body = await readJson(req, 32_000)
+      if (typeof body.name !== 'string' || !body.name) return sendJson(res, 400, { error: 'Chybí název lokálního nástroje.' })
+      const result = await runPcTool(body.name, body.args && typeof body.args === 'object' ? body.args : {})
+      return sendJson(res, 200, { result })
+    } catch (error) {
+      return sendJson(res, error.status || 500, { error: error instanceof Error ? error.message : 'Lokální nástroj selhal.' })
+    }
   }
 
   if (req.method === 'POST' && req.url === '/api/backend') {
