@@ -16,7 +16,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
  * does not inherit those values automatically. Read only VITE_BACKEND here so
  * selecting Gemini/direct mode doesn't start an unnecessary Claude process.
  * An explicit shell environment variable takes precedence, just as it does in
- * Vite. Unknown/missing values fall back to bridge, matching config.ts.
+ * Vite. Unknown/missing values fall back to Gemini, matching config.ts.
  */
 function configuredBackend() {
   const fromProcess = process.env.VITE_BACKEND?.trim().toLowerCase()
