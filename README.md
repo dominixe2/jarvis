@@ -1,37 +1,39 @@
 # JARVIS
 
-JARVIS is the standalone desktop/browser voice assistant project. Springtrap is a separate character project and must not be added to this repository.
+JARVIS is the standalone assistant project: a cyan holographic interface, voice conversation, and a local Node bridge for computer-control integrations. Springtrap is a separate project and its character code does not belong here.
 
-## Project direction
+## Download JARVIS for Windows
 
-- Cyan holographic HUD with the existing React/Three.js scene, reactor, voice visualizer, diagnostics, and panels.
-- Voice-first conversations with wake-word support and interruptible speech.
+**[Download the JARVIS source ZIP from the main branch](https://github.com/dominixe2/jarvis/archive/refs/heads/main.zip)**
+
+1. Install [Node.js 20 or newer](https://nodejs.org/).
+2. Download and extract the ZIP.
+3. Double-click `start-jarvis.bat`.
+4. Keep the terminal window open and open the local URL printed there.
+5. Click **INITIALISE**. Open **Settings** to configure the Gemini Flash backend and save your API key.
+
+The launcher installs npm dependencies on first run. JARVIS currently runs locally in Chrome or Edge with a Node service; this repository does **not yet provide a signed standalone Windows installer or a single-file EXE**.
+
+## Project features
+
+- Cyan holographic HUD with the React/Three.js scene, reactor, voice visualizer, diagnostics, and panels.
+- Voice-first conversations, wake-word support, and interruptible speech.
 - Local Node bridge for computer-control integrations. Write-capable tools stay disabled by default.
-- Provider integrations are optional and configured locally. Do not commit API keys or put secret keys in Vite client variables.
+- Provider integrations are optional and configured locally. Never commit API keys or put secret keys in Vite client variables.
 
-## Current backend and voice
+## Backends and voice
 
-The existing project uses the Claude Code local bridge by default and browser speech synthesis as the default speech output. Optional integrations such as Groq and Fish Audio must be implemented and tested before they are advertised as available.
+The default backend is the Claude Code local bridge, which uses your existing Claude Code login and provides access to configured local MCP integrations. It is not a hosted service. Browser speech synthesis is the default voice output. Optional integrations such as Groq and Fish Audio must be implemented and tested before being advertised as available.
 
-## Gemini backend (local only)
+### Gemini backend
 
 Run `npm start`, open **Settings**, choose the Gemini Flash backend, and enter the API key. Restart JARVIS after changing the backend so Vite reloads the saved setting. On Windows, the local Node service encrypts the key using Windows DPAPI for the current Windows account and stores only the encrypted value under the user profile. The key is never included in the Vite browser bundle. Requests are relayed through `127.0.0.1:8788`. Do not use `VITE_GEMINI_API_KEY` or store the key in a plaintext environment variable.
 
 Gemini mode provides model replies but does not currently provide the Claude bridge's local computer-control/MCP tools. API access, quotas, and any free allowance depend on Google's current terms.
 
-## Run on Windows
-
-1. Install Node.js 20 or newer from [nodejs.org](https://nodejs.org/).
-2. Download or clone this repository and open its folder.
-3. Double-click `start-jarvis.bat`. On first run it installs npm dependencies if they are missing, then starts the local services and Vite.
-4. Open the local URL printed in the terminal, preferably in Chrome or Edge, and click **INITIALISE**.
-5. Open **Settings** to store a Gemini API key and select the Gemini backend. Restart using `start-jarvis.bat` after changing the backend.
-
-Keep the terminal window open while JARVIS runs. Press Ctrl+C in that window to stop it. To diagnose prerequisites without changing anything, run `npm run setup`.
-
 ## Run from a terminal
 
-Use Node.js 20 or newer. Install dependencies with `npm install`, then run `npm run setup` for an advisory preflight check. Start the app using `npm start`. The local bridge uses your existing Claude Code login; it is not a standalone API-key-free hosted service.
+Use Node.js 20 or newer. Install dependencies with `npm install`, then run `npm run setup` for an advisory preflight check. Start the app using `npm start`. Keep the terminal open while JARVIS runs. Press Ctrl+C in that window to stop it. To diagnose prerequisites without changing anything, run `npm run setup`.
 
 ## Separate Springtrap project
 
