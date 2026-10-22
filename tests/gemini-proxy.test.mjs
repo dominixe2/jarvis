@@ -137,14 +137,15 @@ test('credential storage is DPAPI-encrypted on Windows and explicitly unavailabl
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key: fakeKey }),
   })
+  const result = await response.json()
 
   if (process.platform !== 'win32') {
     assert.equal(response.status, 500)
-    assert.match((await response.json()).error, /Windows/)
+    assert.match(result.error, /Windows/)
     return
   }
 
-  assert.equal(response.status, 200)
+  assert.equal(response.status, 200, `Windows DPAPI storage failed: ${result.error || JSON.stringify(result)}`)
   const encryptedPath = join(root, 'appdata', 'JARVIS', 'gemini-key.dpapi')
   const encrypted = await readFile(encryptedPath, 'utf8')
   assert.ok(encrypted.length > 0)
