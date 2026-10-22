@@ -1,39 +1,46 @@
 /**
- * One command to run JARVIS: the bridge (brain) and the Vite dev server (face)
- * together, so a student types `npm start` and nothing else.
+ * One command to run JARVIS: start the Vite face and, when needed, its local
+ * bridge. The Gemini and direct-API backends do not need the Claude bridge.
  *
- * Two long-running processes normally mean two terminals. This launcher spawns
- * both as children, tags their output so you can tell them apart, and shuts
- * them down together on Ctrl-C — no extra dependency, just Node.
- *
- * Pass --writes to allow JARVIS to take real actions (drive the phone, the
- * browser, send things): `npm start -- --writes`.
+ * Pass --writes only when using the bridge and you explicitly want tools that
+ * can change files, send things, or control devices:
+ *   npm start -- --writes
  */
 
 import { spawn } from 'node:child_process'
 import process from 'node:process'
-import { cpSync, existsSync, mkdirSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 
 /**
- * Put MediaPipe's WebAssembly where the page can actually load it.
- *
- * Hand tracking needs a WASM runtime, and the usual recipe fetches it from a
- * CDN. That fails here twice over. The page's CSP names no CDN in `script-src`,
- * and the runtime arrives as a script — so it is blocked, and the failure
- * surfaces as gesture control simply never starting. And a CDN import is a live
- * supply-chain dependency: executable code, re-resolved on every load, that we
- * do not control and cannot pin against being changed under us.
- *
- * Copying it out of node_modules solves both. It is served from our own origin,
- * so `'self'` covers it; and it is the exact bytes of the version in the
- * lockfile. It stays out of git — 34 MB of build output does not belong in a
- * repository — and is re-copied whenever it is missing, which costs nothing
- * after the first run.
+ * Vite loads .env.local itself, but this Node launcher runs before Vite and
+ * does not inherit those values automatically. Read only VITE_BACKEND here so
+ * selecting Gemini/direct mode doesn't start an unnecessary Claude process.
+ * An explicit shell environment variable takes precedence, just as it does in
+ * Vite. Unknown/missing values fall back to bridge, matching config.ts.
+ */
+function configuredBackend() {
+  const fromProcess = process.env.VITE_BACKEND?.trim().toLowerCase()
+  if (fromProcess) return fromProcess
+
+  try {
+    const file = readFileSync('.env.local', 'utf8')
+    const match = file.match(/^\s*VITE_BACKEND\s*=\s*(.*?)\s*$/m)
+    if (!match) return 'bridge'
+    const value = match[1].replace(/^(['"])(.*)\1$/, '$2').trim().toLowerCase()
+    return value || 'bridge'
+  } catch {
+    return 'bridge'
+  }
+}
+
+/**
+ * Put MediaPipe's WebAssembly where the page can load it. The runtime is copied
+ * from the lockfile-pinned dependency and stays out of git.
  */
 function vendorWasm() {
   const from = 'node_modules/@mediapipe/tasks-vision/wasm'
   const to = 'public/mediapipe'
-  if (!existsSync(from)) return // gesture control is optional; carry on without it
+  if (!existsSync(from)) return
   if (existsSync(`${to}/vision_wasm_internal.wasm`)) return
   try {
     mkdirSync(to, { recursive: true })
@@ -45,6 +52,8 @@ function vendorWasm() {
 }
 
 const writes = process.argv.includes('--writes')
+const backend = configuredBackend()
+const needsBridge = backend !== 'gemini' && backend !== 'direct'
 
 // A dim label per process, so the interleaved logs stay readable.
 const paint = (tag, colour) => (line) =>
@@ -65,9 +74,11 @@ function run(name, command, args, colour, env) {
   })
   child.stdout.on('data', (d) => process.stdout.write(label(d) + '\n'))
   child.stderr.on('data', (d) => process.stderr.write(label(d) + '\n'))
+  child.on('error', (err) => {
+    console.error(`[${name}] failed to start: ${err.message}`)
+    shutdown(1)
+  })
   child.on('exit', (code) => {
-    // If either half dies the other is useless, so take the whole thing down
-    // rather than leave a half-running app that looks alive but cannot answer.
     console.log(`\x1b[${colour}m${name}\x1b[0m exited (${code}); stopping the rest.`)
     shutdown(code ?? 0)
   })
@@ -93,33 +104,28 @@ process.on('SIGINT', () => shutdown(0))
 process.on('SIGTERM', () => shutdown(0))
 
 /**
- * Tell the bridge which port the face will actually be on.
- *
- * The bridge only trusts WebSocket origins on localhost:5173-5199 and
- * 4173-4199, which is the right default — a socket that any local page can open
- * is a socket that drives every MCP server on the machine. But a launcher that
- * assigns a port outside that range produces the single most confusing failure
- * this project has: the interface loads, the reactor spins, the microphone
- * hears you, and the brain answers nothing, because the handshake is being 403'd
- * somewhere neither half reports. Passing the port through closes that gap
- * without widening what the bridge trusts by default.
+ * When the bridge is enabled, tell it which port the face uses. This keeps the
+ * origin allowlist narrow if Vite selects a non-default development port.
  */
 const port = process.env.PORT
 const bridgeEnv = writes ? { JARVIS_ALLOW_WRITES: '1' } : {}
-if (port) {
+if (port && needsBridge) {
   bridgeEnv.JARVIS_ALLOWED_ORIGINS = `http://localhost:${port},http://127.0.0.1:${port}`
   console.log(`  serving the face on port ${port}; the bridge will accept it.\n`)
 }
 
 vendorWasm()
 
-console.log('\nJ.A.R.V.I.S. starting — the brain and the face.\n')
-run('bridge', 'node', ['bridge/server.mjs'], '36', bridgeEnv)
-// npm is a shell script on most systems; call the vite binary directly so we do
-// not need shell:true (which would break the argument handling above).
+console.log(`\nJ.A.R.V.I.S. starting — backend: ${backend}.${needsBridge ? ' Local bridge enabled.' : ' Local bridge not needed.'}\n`)
+if (needsBridge) {
+  run('bridge', 'node', ['bridge/server.mjs'], '36', bridgeEnv)
+}
+
+// npm is a shell script on most systems; call Vite directly so shell quoting is
+// not needed and process arguments behave consistently on Windows.
 run('face', process.execPath, ['node_modules/vite/bin/vite.js'], '35', {})
 
 console.log(
-  '\nWhen it says the dev server is ready, open the URL it prints in Chrome,\n' +
+  '\nWhen the dev server is ready, open the URL it prints in Chrome,\n' +
     'click INITIALISE, and say "Hey Jarvis". Ctrl-C stops everything.\n',
 )
