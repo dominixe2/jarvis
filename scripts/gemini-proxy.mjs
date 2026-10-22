@@ -121,7 +121,7 @@ const server = createServer(async (req, res) => {
       if (!key) return sendJson(res, 400, { error: 'Vlož platný Gemini API klíč.' })
       if (key.length > 4096 || /[\r\n\0]/.test(key)) return sendJson(res, 400, { error: 'Formát API klíče není platný.' })
       saveKey(key)
-      return sendJson(res, 200, { configured: true, secureStorage: true, storage: 'Windows DPAPI' })
+      return sendJson(res, 200, { configured: true, secureStorage: true, storage: 'Windows DPAPI', backend: readBackend() })
     } catch (error) {
       return sendJson(res, error.status || 500, { error: error instanceof Error ? error.message : 'Klíč se nepodařilo bezpečně uložit.' })
     }
@@ -130,7 +130,7 @@ const server = createServer(async (req, res) => {
   if (req.method === 'DELETE' && req.url === '/api/gemini/key') {
     try {
       if (existsSync(keyFile)) unlinkSync(keyFile)
-      return sendJson(res, 200, { configured: false, secureStorage: process.platform === 'win32' })
+      return sendJson(res, 200, { configured: false, secureStorage: process.platform === 'win32', storage: process.platform === 'win32' ? 'Windows DPAPI' : 'Windows required', backend: readBackend() })
     } catch (error) {
       return sendJson(res, 500, { error: error instanceof Error ? error.message : 'Klíč se nepodařilo odebrat.' })
     }
