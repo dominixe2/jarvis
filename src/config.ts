@@ -130,8 +130,6 @@ export const KOKORO_VOICE = choice(
 
 export const env = {
   anthropicKey: str(import.meta.env.VITE_ANTHROPIC_API_KEY) ?? '',
-  // For local-only testing. VITE_ values are exposed to the browser bundle.
-  geminiKey: str(import.meta.env.VITE_GEMINI_API_KEY) ?? '',
   elevenKey: str(import.meta.env.VITE_ELEVENLABS_API_KEY) ?? '',
   elevenVoiceId:
     str(import.meta.env.VITE_ELEVENLABS_VOICE_ID) ?? 'JBFqnCBsd6RMkjVDRZzb',
