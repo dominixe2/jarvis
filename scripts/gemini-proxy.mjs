@@ -96,8 +96,8 @@ function readBackend() {
   try {
     const raw = readFileSync(envFile, 'utf8')
     const match = raw.match(/^\s*VITE_BACKEND\s*=\s*(.*?)\s*$/m)
-    return match?.[1]?.replace(/^(['"])(.*)\1$/, '$2').trim() || 'bridge'
-  } catch { return 'bridge' }
+    return match?.[1]?.replace(/^(['"])(.*)\1$/, '$2').trim() || 'gemini'
+  } catch { return 'gemini' }
 }
 
 function saveBackend(backend) {
