@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 
-type KeyStatus = { configured: boolean; secureStorage: boolean; storage: string }
+type KeyStatus = { configured: boolean; secureStorage: boolean; storage: string; backend: 'bridge' | 'gemini' }
 
 const API = 'http://127.0.0.1:8788/api/gemini'
 
@@ -28,6 +28,26 @@ export function Settings() {
   useEffect(() => {
     if (open) void refreshStatus()
   }, [open])
+
+  async function chooseBackend(backend: 'bridge' | 'gemini') {
+    setBusy(true)
+    setMessage('')
+    try {
+      const response = await fetch('http://127.0.0.1:8788/api/backend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backend }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Režim se nepodařilo uložit.')
+      setStatus((current) => current ? { ...current, backend: data.backend } : current)
+      setMessage('Režim je uložen. Restartuj JARVIS přes npm start, aby se změna projevila.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Režim se nepodařilo uložit.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function save(event: FormEvent) {
     event.preventDefault()
@@ -77,6 +97,17 @@ export function Settings() {
         <section aria-label="Nastavení JARVIS" style={{ pointerEvents: 'auto', width: 'min(360px, calc(100vw - 32px))', padding: 18, border: '1px solid #00e5ff66', borderRadius: 12, background: 'rgba(1, 9, 16, 0.97)', boxShadow: '0 0 35px #00e5ff20' }}>
           <h2 style={{ margin: '0 0 8px', fontSize: 16, letterSpacing: '0.12em', fontWeight: 600 }}>JARVIS / NASTAVENÍ</h2>
           <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.5, color: '#94bfc8' }}>Gemini API klíč se ukládá šifrovaně pomocí ochrany Windows DPAPI. Klíč se neposílá do klientského JavaScriptu.</p>
+          <label htmlFor="jarvis-backend" style={{ display: 'block', fontSize: 11, marginBottom: 6, letterSpacing: '0.08em' }}>REŽIM ASISTENTA</label>
+          <select
+            id="jarvis-backend"
+            value={status?.backend ?? 'bridge'}
+            disabled={busy || !status}
+            onChange={(event) => void chooseBackend(event.target.value as 'bridge' | 'gemini')}
+            style={{ width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', marginBottom: 12, background: '#06131b', color: '#d9fbff' }}
+          >
+            <option value="bridge">Lokální bridge (Claude Code + nástroje)</option>
+            <option value="gemini">Gemini Flash (API klíč)</option>
+          </select>
           <div style={{ fontSize: 12, marginBottom: 12 }}>
             <strong>Stav: </strong>
             {status ? (status.configured ? 'API klíč nastaven' : 'API klíč chybí') : 'kontroluji místní službu…'}
