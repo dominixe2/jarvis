@@ -15,7 +15,7 @@ The existing project uses the Claude Code local bridge by default and browser sp
 
 ## Gemini backend (local only)
 
-Set `VITE_BACKEND=gemini` in `.env.local`, then run `npm start`. Open **Settings** in the app and enter the Gemini API key. On Windows, the local Node service encrypts it using Windows DPAPI for the current Windows account and stores only the encrypted value under the user profile. The key is never included in the Vite browser bundle. Requests are relayed through `127.0.0.1:8788`. Do not use `VITE_GEMINI_API_KEY` or store the key in a plaintext environment variable.
+Run `npm start`, open **Settings**, choose the Gemini Flash backend, and enter the API key. Restart JARVIS after changing the backend so Vite reloads the saved setting. On Windows, the local Node service encrypts the key using Windows DPAPI for the current Windows account and stores only the encrypted value under the user profile. The key is never included in the Vite browser bundle. Requests are relayed through `127.0.0.1:8788`. Do not use `VITE_GEMINI_API_KEY` or store the key in a plaintext environment variable.
 
 ## Run locally
 
