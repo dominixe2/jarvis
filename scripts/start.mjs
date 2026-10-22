@@ -1,6 +1,6 @@
 /**
- * One command to run JARVIS: start the Vite face and, when needed, its local
- * bridge. The Gemini and direct-API backends do not need the Claude bridge.
+ * One command to run JARVIS: start the Vite face, the local Gemini credential
+ * proxy, and the Claude bridge only when the selected backend needs it.
  *
  * Pass --writes only when using the bridge and you explicitly want tools that
  * can change files, send things, or control devices:
@@ -54,6 +54,10 @@ function vendorWasm() {
 const writes = process.argv.includes('--writes')
 const backend = configuredBackend()
 const needsBridge = backend !== 'gemini' && backend !== 'direct'
+
+// The proxy must always run: Settings uses it to save/check a Gemini key even
+// while the currently selected backend is still the local bridge.
+const needsGeminiProxy = true
 
 // A dim label per process, so the interleaved logs stay readable.
 const paint = (tag, colour) => (line) =>
@@ -117,8 +121,11 @@ if (port && needsBridge) {
 vendorWasm()
 
 console.log(`\nJ.A.R.V.I.S. starting — backend: ${backend}.${needsBridge ? ' Local bridge enabled.' : ' Local bridge not needed.'}\n`)
+if (needsGeminiProxy) {
+  run('gemini-proxy', process.execPath, ['scripts/gemini-proxy.mjs'], '32', {})
+}
 if (needsBridge) {
-  run('bridge', 'node', ['bridge/server.mjs'], '36', bridgeEnv)
+  run('bridge', process.execPath, ['bridge/server.mjs'], '36', bridgeEnv)
 }
 
 // npm is a shell script on most systems; call Vite directly so shell quoting is

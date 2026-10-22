@@ -1,12 +1,10 @@
-import { env, SYSTEM_PROMPT } from '../config'
+import { SYSTEM_PROMPT } from '../config'
 import type { AskHandlers, Msg } from './anthropic'
 
 /**
- * Local testing backend for Gemini Flash. The key is read from VITE_GEMINI_API_KEY
- * and therefore is included in the local browser bundle. Use only on localhost;
- * never deploy this mode or commit a real key.
+ * Gemini Flash client. The API key stays in the local Node proxy and is never
+ * sent to the browser. The proxy accepts requests only from JARVIS localhost origins.
  */
-const MODEL = 'gemini-2.5-flash'
 let active: AbortController | null = null
 
 function messageText(content: unknown): string {
@@ -23,10 +21,6 @@ export async function ask(
   history: Msg[],
   handlers: AskHandlers,
 ): Promise<{ text: string; tools: string[] }> {
-  if (!env.geminiKey) {
-    throw new Error('Chybí Gemini API klíč. Do souboru .env.local nastav VITE_BACKEND=gemini a VITE_GEMINI_API_KEY=tvůj_klíč, potom JARVIS restartuj.')
-  }
-
   active?.abort()
   const controller = new AbortController()
   active = controller
@@ -42,12 +36,11 @@ export async function ask(
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent?alt=sse`,
+      `http://127.0.0.1:8788/api/gemini/stream`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': env.geminiKey,
         },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -63,7 +56,7 @@ export async function ask(
       let message = `Gemini API vrátilo chybu HTTP ${response.status}.`
       try {
         const parsed = JSON.parse(detail)
-        message = parsed?.error?.message || message
+        message = parsed?.error?.message || parsed?.error || message
       } catch {
         if (detail) message += ` ${detail.slice(0, 300)}`
       }
@@ -131,5 +124,5 @@ export function cancel(): void {
 }
 
 export function connectedLabels(): string[] {
-  return env.geminiKey ? ['Gemini Flash API'] : ['Gemini API key missing']
+  return ['Gemini local proxy']
 }
