@@ -37,7 +37,7 @@ function runPowerShell(command, input = '') {
 
 function saveKey(key) {
   mkdirSync(keyDir, { recursive: true })
-  const script = "Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; $ErrorActionPreference='Stop'; $plain=[Console]::In.ReadToEnd(); $secure=ConvertTo-SecureString -String $plain -AsPlainText -Force; $encrypted=ConvertFrom-SecureString -SecureString $secure; [Console]::Out.Write($encrypted)"
+  const script = "$ErrorActionPreference='Stop'; $plain=[Console]::In.ReadToEnd(); $bytes=[System.Text.Encoding]::UTF8.GetBytes($plain); $cipher=[System.Security.Cryptography.ProtectedData]::Protect($bytes,$null,[System.Security.Cryptography.DataProtectionScope]::CurrentUser); [Console]::Out.Write([Convert]::ToBase64String($cipher))"
   const encrypted = runPowerShell(script, key)
   if (!encrypted) throw new Error('Windows nevrátilo zašifrovaný klíč.')
   writeFileSync(keyFile, encrypted, { encoding: 'utf8', mode: 0o600 })
@@ -45,7 +45,7 @@ function saveKey(key) {
 
 function loadKey() {
   if (!existsSync(keyFile)) return ''
-  const script = "$ErrorActionPreference='Stop'; $cipher=[System.IO.File]::ReadAllText($env:JARVIS_GEMINI_KEY_FILE); $secure=ConvertTo-SecureString -String $cipher; $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure); try { [Console]::Out.Write([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }"
+  const script = "$ErrorActionPreference='Stop'; $cipher=[Convert]::FromBase64String([System.IO.File]::ReadAllText($env:JARVIS_GEMINI_KEY_FILE)); $plain=[System.Security.Cryptography.ProtectedData]::Unprotect($cipher,$null,[System.Security.Cryptography.DataProtectionScope]::CurrentUser); [Console]::Out.Write([System.Text.Encoding]::UTF8.GetString($plain))"
   return runPowerShell(script)
 }
 
