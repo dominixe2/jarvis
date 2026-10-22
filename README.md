@@ -15,7 +15,7 @@ The existing project uses the Claude Code local bridge by default and browser sp
 
 ## Gemini backend (local only)
 
-Set `VITE_BACKEND=gemini` and `GEMINI_API_KEY=...` in `.env.local`, then run `npm start`. The API key is read by the local Node proxy, not by Vite, and requests are relayed through `127.0.0.1:8788`. Do not use the old `VITE_GEMINI_API_KEY` variable. The local key is currently plaintext in `.env.local`; do not commit that file. Encrypted Windows-account storage and an in-app key entry field are not implemented yet.
+Set `VITE_BACKEND=gemini` in `.env.local`, then run `npm start`. Open **Settings** in the app and enter the Gemini API key. On Windows, the local Node service encrypts it using Windows DPAPI for the current Windows account and stores only the encrypted value under the user profile. The key is never included in the Vite browser bundle. Requests are relayed through `127.0.0.1:8788`. Do not use `VITE_GEMINI_API_KEY` or store the key in a plaintext environment variable.
 
 ## Run locally
 
