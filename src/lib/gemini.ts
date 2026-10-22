@@ -10,10 +10,11 @@ let active: AbortController | null = null
 type GeminiPart = {
   text?: string
   functionCall?: { name: string; args?: Record<string, unknown>; id?: string }
+  thoughtSignature?: string
   functionResponse?: { name: string; response: Record<string, unknown>; id?: string }
 }
 type GeminiContent = { role: 'user' | 'model'; parts: GeminiPart[] }
-type ToolCall = { name: string; args: Record<string, unknown>; id?: string }
+type ToolCall = { name: string; args: Record<string, unknown>; id?: string; thoughtSignature?: string }
 
 const LOCAL_TOOLS = [{
   functionDeclarations: [
@@ -163,6 +164,7 @@ export async function ask(
               name: call.name,
               args: { ...(existing?.args ?? {}), ...(call.args ?? {}) },
               ...(call.id ? { id: call.id } : existing?.id ? { id: existing.id } : {}),
+              ...(part.thoughtSignature ? { thoughtSignature: part.thoughtSignature } : existing?.thoughtSignature ? { thoughtSignature: existing.thoughtSignature } : {}),
             })
           }
         }
@@ -191,7 +193,7 @@ export async function ask(
         role: 'model',
         parts: [
           ...(roundText ? [{ text: roundText }] : []),
-          ...functionCalls.map((call) => ({ functionCall: { name: call.name, args: call.args, ...(call.id ? { id: call.id } : {}) } })),
+          ...functionCalls.map((call) => ({ functionCall: { name: call.name, args: call.args, ...(call.id ? { id: call.id } : {}) }, ...(call.thoughtSignature ? { thoughtSignature: call.thoughtSignature } : {}) })),
         ],
       })
 
