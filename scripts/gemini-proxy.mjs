@@ -35,9 +35,52 @@ function runPowerShell(command, input = '') {
   return (result.stdout || '').trim()
 }
 
+const DPAPI_SOURCE = String.raw`
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+public static class JarvisDpapi {
+  [StructLayout(LayoutKind.Sequential)]
+  private struct DATA_BLOB { public int cbData; public IntPtr pbData; }
+  [DllImport("crypt32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+  private static extern bool CryptProtectData(ref DATA_BLOB input, string description, IntPtr entropy, IntPtr reserved, IntPtr prompt, int flags, ref DATA_BLOB output);
+  [DllImport("crypt32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+  private static extern bool CryptUnprotectData(ref DATA_BLOB input, IntPtr description, IntPtr entropy, IntPtr reserved, IntPtr prompt, int flags, ref DATA_BLOB output);
+  [DllImport("kernel32.dll", SetLastError=true)]
+  private static extern IntPtr LocalFree(IntPtr memory);
+  public static byte[] Protect(byte[] data) { return Transform(data, true); }
+  public static byte[] Unprotect(byte[] data) { return Transform(data, false); }
+  private static byte[] Transform(byte[] data, bool protect) {
+    DATA_BLOB input = new DATA_BLOB();
+    DATA_BLOB output = new DATA_BLOB();
+    input.cbData = data.Length;
+    input.pbData = Marshal.AllocHGlobal(data.Length);
+    try {
+      Marshal.Copy(data, 0, input.pbData, data.Length);
+      bool ok = protect
+        ? CryptProtectData(ref input, "JARVIS Gemini API key", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 1, ref output)
+        : CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 1, ref output);
+      if (!ok) throw new Win32Exception(Marshal.GetLastWin32Error());
+      byte[] result = new byte[output.cbData];
+      Marshal.Copy(output.pbData, result, 0, output.cbData);
+      return result;
+    } finally {
+      if (input.pbData != IntPtr.Zero) Marshal.FreeHGlobal(input.pbData);
+      if (output.pbData != IntPtr.Zero) LocalFree(output.pbData);
+    }
+  }
+}`
+function dpapiScript(body) {
+  return `$ErrorActionPreference='Stop'
+Add-Type -TypeDefinition @'
+${DPAPI_SOURCE}
+'@
+${body}`
+}
+
 function saveKey(key) {
   mkdirSync(keyDir, { recursive: true })
-  const script = "Add-Type -AssemblyName System.Security.Cryptography.ProtectedData -ErrorAction Stop; $ErrorActionPreference='Stop'; $plain=[Console]::In.ReadToEnd(); $bytes=[System.Text.Encoding]::UTF8.GetBytes($plain); $cipher=[System.Security.Cryptography.ProtectedData]::Protect($bytes,$null,[System.Security.Cryptography.DataProtectionScope]::CurrentUser); [Console]::Out.Write([Convert]::ToBase64String($cipher))"
+  const script = dpapiScript("$plain=[Console]::In.ReadToEnd(); $bytes=[System.Text.Encoding]::UTF8.GetBytes($plain); $cipher=[JarvisDpapi]::Protect($bytes); [Console]::Out.Write([Convert]::ToBase64String($cipher))")
   const encrypted = runPowerShell(script, key)
   if (!encrypted) throw new Error('Windows nevrátilo zašifrovaný klíč.')
   writeFileSync(keyFile, encrypted, { encoding: 'utf8', mode: 0o600 })
@@ -45,7 +88,7 @@ function saveKey(key) {
 
 function loadKey() {
   if (!existsSync(keyFile)) return ''
-  const script = "Add-Type -AssemblyName System.Security.Cryptography.ProtectedData -ErrorAction Stop; $ErrorActionPreference='Stop'; $cipher=[Convert]::FromBase64String([System.IO.File]::ReadAllText($env:JARVIS_GEMINI_KEY_FILE)); $plain=[System.Security.Cryptography.ProtectedData]::Unprotect($cipher,$null,[System.Security.Cryptography.DataProtectionScope]::CurrentUser); [Console]::Out.Write([System.Text.Encoding]::UTF8.GetString($plain))"
+  const script = dpapiScript("$cipher=[Convert]::FromBase64String([System.IO.File]::ReadAllText($env:JARVIS_GEMINI_KEY_FILE)); $plain=[JarvisDpapi]::Unprotect($cipher); [Console]::Out.Write([System.Text.Encoding]::UTF8.GetString($plain))")
   return runPowerShell(script)
 }
 
