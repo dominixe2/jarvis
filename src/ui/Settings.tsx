@@ -72,17 +72,9 @@ export function Settings() {
   }
 
   return (
-    <div style={{ position: 'fixed', right: 24, bottom: 22, zIndex: 100, pointerEvents: 'auto', fontFamily: 'system-ui, sans-serif', color: '#baf8ff' }}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        style={{ float: 'right', border: '1px solid #00e5ff88', borderRadius: 8, background: '#04121beF', color: '#8ff5ff', padding: '10px 14px', cursor: 'pointer', letterSpacing: '0.08em' }}
-      >
-        {open ? 'ZAVŘÍT NASTAVENÍ' : '⚙ NASTAVENÍ'}
-      </button>
+    <div style={{ position: 'fixed', right: 24, bottom: 22, zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, pointerEvents: 'none', fontFamily: 'system-ui, sans-serif', color: '#baf8ff' }}>
       {open && (
-        <section aria-label="Nastavení JARVIS" style={{ clear: 'both', marginTop: 12, width: 'min(360px, calc(100vw - 32px))', padding: 18, border: '1px solid #00e5ff66', borderRadius: 12, background: 'rgba(1, 9, 16, 0.97)', boxShadow: '0 0 35px #00e5ff20' }}>
+        <section aria-label="Nastavení JARVIS" style={{ pointerEvents: 'auto', width: 'min(360px, calc(100vw - 32px))', padding: 18, border: '1px solid #00e5ff66', borderRadius: 12, background: 'rgba(1, 9, 16, 0.97)', boxShadow: '0 0 35px #00e5ff20' }}>
           <h2 style={{ margin: '0 0 8px', fontSize: 16, letterSpacing: '0.12em', fontWeight: 600 }}>JARVIS / NASTAVENÍ</h2>
           <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.5, color: '#94bfc8' }}>Gemini API klíč se ukládá šifrovaně pomocí ochrany Windows DPAPI. Klíč se neposílá do klientského JavaScriptu.</p>
           <div style={{ fontSize: 12, marginBottom: 12 }}>
@@ -111,6 +103,14 @@ export function Settings() {
           {message && <p role="status" style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: message.includes('šifrovaně') || message.includes('odebrán') ? '#6fffc0' : '#ffc477' }}>{message}</p>}
         </section>
       )}
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        style={{ pointerEvents: 'auto', border: '1px solid #00e5ff88', borderRadius: 8, background: '#04121beF', color: '#8ff5ff', padding: '10px 14px', cursor: 'pointer', letterSpacing: '0.08em' }}
+      >
+        {open ? 'ZAVŘÍT NASTAVENÍ' : '⚙ NASTAVENÍ'}
+      </button>
     </div>
   )
 }
