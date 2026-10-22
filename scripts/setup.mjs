@@ -47,8 +47,8 @@ try {
 console.log('');
 console.log('Start JARVIS with: npm start');
 console.log('The launcher starts the local Gemini settings/proxy service automatically.');
-console.log('Use Settings in the app to store your Gemini key, select Gemini Flash, then restart JARVIS.');
-console.log('For the default bridge backend, install and sign in to Claude Code first.');
+console.log('Use Settings in the app to store your Gemini 3.8 Flash API key, then restart JARVIS. Gemini is the default.');
+console.log('For advanced MCP integrations, switch to bridge mode and sign in to Claude Code first.');
 console.log('The optional bridge write tools stay disabled unless explicitly enabled.');
 console.log('');
 process.exit(0);
