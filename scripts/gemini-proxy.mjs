@@ -1,24 +1,19 @@
 /**
- * Local Gemini proxy. The API key is read only by Node from .env.local and is
- * never inlined into Vite's browser bundle. Bind exclusively to loopback.
+ * Local Gemini proxy and Windows DPAPI credential store.
+ * API keys never enter the Vite bundle or get written to plaintext files.
  */
 import { createServer } from 'node:http'
-import { readFileSync } from 'node:fs'
-
-function readLocalKey() {
-  if (process.env.GEMINI_API_KEY?.trim()) return process.env.GEMINI_API_KEY.trim()
-  try {
-    const file = readFileSync('.env.local', 'utf8')
-    for (const line of file.split(/\r?\n/)) {
-      const match = line.match(/^\s*GEMINI_API_KEY\s*=\s*(.*?)\s*$/)
-      if (match) return match[1].replace(/^(['"])(.*)\1$/, '$2').trim()
-    }
-  } catch {}
-  return ''
-}
+import { spawnSync } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 
 const PORT = Number(process.env.JARVIS_GEMINI_PORT || 8788)
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1'])
+const appData = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
+const keyDir = join(appData, 'JARVIS')
+const keyFile = join(keyDir, 'gemini-key.dpapi')
+
 function allowedOrigin(value) {
   if (!value) return false
   try {
@@ -28,43 +23,105 @@ function allowedOrigin(value) {
   } catch { return false }
 }
 
+function runPowerShell(command, input = '') {
+  if (process.platform !== 'win32') throw new Error('Bezpečné ukládání klíče je zatím dostupné pouze ve Windows.')
+  const result = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {
+    input, encoding: 'utf8', windowsHide: true, timeout: 10000,
+    env: { ...process.env, JARVIS_GEMINI_KEY_FILE: keyFile },
+  })
+  if (result.error) throw result.error
+  if (result.status !== 0) throw new Error((result.stderr || 'Windows credential operation failed.').trim().slice(0, 300))
+  return (result.stdout || '').trim()
+}
+
+function saveKey(key) {
+  mkdirSync(keyDir, { recursive: true })
+  const script = "$ErrorActionPreference='Stop'; $plain=[Console]::In.ReadToEnd(); $secure=ConvertTo-SecureString -String $plain -AsPlainText -Force; $encrypted=ConvertFrom-SecureString -SecureString $secure; [Console]::Out.Write($encrypted)"
+  const encrypted = runPowerShell(script, key)
+  if (!encrypted) throw new Error('Windows nevrátilo zašifrovaný klíč.')
+  writeFileSync(keyFile, encrypted, { encoding: 'utf8', mode: 0o600 })
+}
+
+function loadKey() {
+  if (process.env.GEMINI_API_KEY?.trim()) return process.env.GEMINI_API_KEY.trim()
+  if (!existsSync(keyFile)) return ''
+  const script = "$ErrorActionPreference='Stop'; $cipher=[System.IO.File]::ReadAllText($env:JARVIS_GEMINI_KEY_FILE); $secure=ConvertTo-SecureString -String $cipher; $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure); try { [Console]::Out.Write([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }"
+  return runPowerShell(script)
+}
+
+function sendJson(res, status, data) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
+  res.end(JSON.stringify(data))
+}
+
+async function readJson(req, limit = 1_000_000) {
+  let body = ''
+  for await (const chunk of req) {
+    body += chunk
+    if (body.length > limit) throw Object.assign(new Error('Request too large'), { status: 413 })
+  }
+  return JSON.parse(body || '{}')
+}
+
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin
-  if (!allowedOrigin(origin)) {
-    res.writeHead(403, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ error: 'Local JARVIS origin required.' }))
-    return
-  }
+  if (!allowedOrigin(origin)) return sendJson(res, 403, { error: 'Přístup je povolen jen z místního rozhraní JARVIS.' })
   res.setHeader('Access-Control-Allow-Origin', origin)
   res.setHeader('Vary', 'Origin')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
+
+  if (req.method === 'GET' && req.url === '/api/gemini/status') {
+    return sendJson(res, 200, {
+      configured: Boolean(process.env.GEMINI_API_KEY?.trim() || existsSync(keyFile)),
+      secureStorage: process.platform === 'win32',
+      storage: process.platform === 'win32' ? 'Windows DPAPI' : 'Windows required',
+    })
+  }
+
+  if (req.method === 'POST' && req.url === '/api/gemini/key') {
+    try {
+      const body = await readJson(req, 16_000)
+      const key = typeof body.key === 'string' ? body.key.trim() : ''
+      if (!key) return sendJson(res, 400, { error: 'Vlož platný Gemini API klíč.' })
+      if (key.length > 4096 || /[\r\n\0]/.test(key)) return sendJson(res, 400, { error: 'Formát API klíče není platný.' })
+      saveKey(key)
+      return sendJson(res, 200, { configured: true, secureStorage: true, storage: 'Windows DPAPI' })
+    } catch (error) {
+      return sendJson(res, error.status || 500, { error: error instanceof Error ? error.message : 'Klíč se nepodařilo bezpečně uložit.' })
+    }
+  }
+
+  if (req.method === 'DELETE' && req.url === '/api/gemini/key') {
+    try {
+      if (existsSync(keyFile)) unlinkSync(keyFile)
+      return sendJson(res, 200, { configured: Boolean(process.env.GEMINI_API_KEY?.trim()), secureStorage: process.platform === 'win32' })
+    } catch (error) {
+      return sendJson(res, 500, { error: error instanceof Error ? error.message : 'Klíč se nepodařilo odebrat.' })
+    }
+  }
+
   if (req.method !== 'POST' || req.url !== '/api/gemini/stream') {
     res.writeHead(404); res.end('Not found'); return
   }
 
-  const key = readLocalKey()
-  if (!key) {
-    res.writeHead(503, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ error: 'Chybí GEMINI_API_KEY v .env.local. Klíč není potřeba prefixovat VITE_.' }))
-    return
+  let key
+  try { key = loadKey() } catch (error) {
+    return sendJson(res, 500, { error: error instanceof Error ? error.message : 'Nepodařilo se načíst uložený klíč.' })
   }
+  if (!key) return sendJson(res, 503, { error: 'Chybí Gemini API klíč. Otevři Nastavení a vlož ho tam.' })
 
-  let body = ''
-  for await (const chunk of req) {
-    body += chunk
-    if (body.length > 1_000_000) {
-      res.writeHead(413); res.end('Request too large'); return
-    }
+  let body
+  try { body = await readJson(req) } catch (error) {
+    return sendJson(res, error.status || 400, { error: error instanceof Error ? error.message : 'Neplatný požadavek.' })
   }
 
   try {
-    JSON.parse(body)
     const upstream = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body,
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(120_000),
     })
     res.statusCode = upstream.status
@@ -74,10 +131,8 @@ const server = createServer(async (req, res) => {
     for await (const chunk of upstream.body) res.write(chunk)
     res.end()
   } catch (error) {
-    if (!res.headersSent) {
-      res.writeHead(502, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Gemini proxy failed.' }))
-    } else res.end()
+    if (!res.headersSent) sendJson(res, 502, { error: error instanceof Error ? error.message : 'Gemini proxy failed.' })
+    else res.end()
   }
 })
 
