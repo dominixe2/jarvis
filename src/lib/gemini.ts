@@ -105,7 +105,7 @@ export async function ask(
 
   const contents: GeminiContent[] = history
     .filter((message) => message.role === 'user' || message.role === 'assistant')
-    .map((message) => ({
+    .map((message): GeminiContent => ({
       role: message.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: messageText(message.content) }],
     }))
