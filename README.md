@@ -39,6 +39,24 @@ Gemini mode uses the current Gemini 3.8 Flash model and includes a restricted lo
 
 Use Node.js 20 or newer. Install dependencies with `npm install`, then run `npm run setup` for an advisory preflight check. Start the app using `npm start`. Keep the terminal open while JARVIS runs. Press Ctrl+C in that window to stop it. To diagnose prerequisites without changing anything, run `npm run setup`.
 
+## Free local AI (no API key)
+
+JARVIS now has an optional **Ollama** backend. The language model runs on your own notebook, so there is no provider account, API key, subscription, or per-message fee. The first model download uses internet and takes disk space; after that, inference runs locally. Speed and answer quality depend on your hardware.
+
+### Set up on the Windows notebook
+
+1. Install Ollama from [ollama.com](https://ollama.com/).
+2. Open PowerShell and run `ollama pull qwen2.5:3b` (the model download is a few GB; Ollama needs to be running).
+3. Start JARVIS with `npm start`, open Settings, choose **Ollama lokálně (zdarma, bez API klíče)**, then restart JARVIS.
+4. Open the network URL Vite prints in the terminal from a phone connected to the same Wi-Fi. Keep the notebook and JARVIS running.
+5. The phone sends chat requests to the notebook's chat-only relay on port 8789. The relay has no filesystem or PC-control tools and must not be port-forwarded to the internet.
+
+You can change the model by setting `JARVIS_OLLAMA_MODEL` in the environment before launching JARVIS. The default is `qwen2.5:3b`. If the notebook is on a different network, this local setup will not reach it.
+
+### Important mobile limitations
+
+This is a **local-network chat path**, not a finished native Android companion. Browsers commonly restrict microphone and speech-recognition APIs on plain HTTP LAN addresses, so text chat is the reliable first test on the phone. Reliable mobile voice, background wake word, lock-screen operation, Android permissions, and a secure remote pairing flow still need a native Android companion or a properly configured HTTPS endpoint. The PC must stay powered on to provide the local model. PC-control tools remain local and are not exposed through the Ollama relay.
+
 ## Separate Springtrap project
 
 Springtrap's 3D character, animations, interaction logic, and character-specific AI live in the separate [Springtrap repository](https://github.com/dominixe2/springtrap-). Keep this JARVIS repository focused on the assistant HUD, voice loop, and computer-control bridge.
