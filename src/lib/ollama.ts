@@ -25,7 +25,7 @@ function endpoint(): string {
   // When opened on the PC's LAN address, the phone talks back to that same PC.
   // This is a plain-LAN development path, not a public HTTPS deployment.
   const host = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1'
-  return `http://${host}:8789`
+  return `${window.location.origin}/api/ollama`
 }
 
 export async function ask(
@@ -49,7 +49,7 @@ export async function ask(
   ]
 
   try {
-    const response = await fetch(`${endpoint()}/api/chat`, {
+    const response = await fetch(endpoint(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages, stream: true }),
