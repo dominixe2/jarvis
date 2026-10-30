@@ -53,7 +53,7 @@ function vendorWasm() {
 
 const writes = process.argv.includes('--writes')
 const backend = configuredBackend()
-const needsBridge = backend !== 'gemini' && backend !== 'direct'
+const needsBridge = backend === 'bridge'
 
 // The proxy must always run: Settings uses it to save/check a Gemini key even
 // while the currently selected backend is still the local bridge.
