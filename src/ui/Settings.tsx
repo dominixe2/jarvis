@@ -96,7 +96,7 @@ export function Settings() {
       {open && (
         <section aria-label="Nastavení JARVIS" style={{ pointerEvents: 'auto', width: 'min(360px, calc(100vw - 32px))', padding: 18, border: '1px solid #00e5ff66', borderRadius: 12, background: 'rgba(1, 9, 16, 0.97)', boxShadow: '0 0 35px #00e5ff20' }}>
           <h2 style={{ margin: '0 0 8px', fontSize: 16, letterSpacing: '0.12em', fontWeight: 600 }}>JARVIS / NASTAVENÍ</h2>
-          <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.5, color: '#94bfc8' }}>Gemini API klíč se ukládá šifrovaně pomocí ochrany Windows DPAPI. Klíč se neposílá do klientského JavaScriptu.</p>
+          <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.5, color: '#94bfc8' }}>V režimu Ollama nepotřebuješ účet ani API klíč. Pokud zvolíš Gemini, klíč se ukládá šifrovaně pomocí Windows DPAPI a neposílá se do klientského JavaScriptu.</p>
           <label htmlFor="jarvis-backend" style={{ display: 'block', fontSize: 11, marginBottom: 6, letterSpacing: '0.08em' }}>REŽIM ASISTENTA</label>
           <select
             id="jarvis-backend"
