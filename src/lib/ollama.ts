@@ -38,7 +38,7 @@ export async function ask(
   let text = ''
 
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: SYSTEM_PROMPT + '\n\nDŮLEŽITÉ PRO TENTO REŽIM: Běžíš jako lokální chat bez nástrojů. Nemáš přístup k souborům, aplikacím, internetu ani ovládání PC. Nikdy netvrď, že jsi něco provedl na zařízení, pokud jsi pouze popsal postup. Odpovídej česky, pokud uživatel nepoužije jiný jazyk.' },
     ...history
       .filter((message) => message.role === 'user' || message.role === 'assistant')
       .map((message) => ({
