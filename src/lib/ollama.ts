@@ -21,10 +21,9 @@ function textOf(content: unknown): string {
 
 function endpoint(): string {
   const configured = import.meta.env.VITE_OLLAMA_PROXY_URL?.trim()
-  if (configured) return configured.replace(/\/$/, '')
-  // When opened on the PC's LAN address, the phone talks back to that same PC.
-  // This is a plain-LAN development path, not a public HTTPS deployment.
-  const host = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1'
+  if (configured) return configured.replace(/\/$/, '') + '/api/chat'
+  if (typeof window === 'undefined') return 'http://127.0.0.1:8789/api/chat'
+  // Same-origin proxy keeps LAN chat working without opening a cross-origin API.
   return `${window.location.origin}/api/ollama`
 }
 
