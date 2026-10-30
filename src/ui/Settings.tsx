@@ -105,7 +105,8 @@ export function Settings() {
             onChange={(event) => void chooseBackend(event.target.value as 'bridge' | 'gemini' | 'ollama')}
             style={{ width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', marginBottom: 12, background: '#06131b', color: '#d9fbff' }}
           >
-            <option value="ollama">Ollama lokálně (zdarma, bez API klíče)</option>\n            <option value="bridge">Claude Code bridge (placený tarif / API kredity)</option>
+            <option value="ollama">Ollama lokálně (zdarma, bez API klíče)</option>
+            <option value="bridge">Claude Code bridge (placený tarif / API kredity)</option>
             <option value="gemini">Gemini 3.8 Flash (konverzace + základní ovládání PC)</option>
           </select>
           {status?.backend === 'gemini' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>Gemini umí otevřít povolené aplikace a weby, zobrazit základní stav PC a na požádání hledat nebo číst textové soubory ve složkách Plocha, Dokumenty a Stažené soubory. Rozšířené MCP nástroje jsou v bridge režimu a vyžadují přihlášení Claude Code.</p>}
