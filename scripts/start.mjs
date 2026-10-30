@@ -130,6 +130,7 @@ if (needsBridge) {
 
 // npm is a shell script on most systems; call Vite directly so shell quoting is
 // not needed and process arguments behave consistently on Windows.
+run('ollama-proxy', process.execPath, ['scripts/ollama-proxy.mjs'], '33', {})
 run('face', process.execPath, ['node_modules/vite/bin/vite.js'], '35', {})
 
 console.log(
