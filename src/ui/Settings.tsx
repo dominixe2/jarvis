@@ -112,8 +112,8 @@ export function Settings() {
           {status?.backend === 'ollama' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>Mozek běží lokálně na notebooku přes Ollama. Bez účtu, API klíče a poplatků. Nainstaluj Ollama a model qwen2.5:3b. Telefon musí být na stejné Wi-Fi; PC musí zůstat zapnuté. V tomto režimu je zatím dostupný chat, ne ovládání PC nástroji.</p>}\n          {status?.backend === 'bridge' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#ffc477' }}>Claude Code není součástí bezplatného tarifu Claude. Vyžaduje placený tarif Pro nebo vyšší, případně účet Anthropic Console s účtovaným API. Použití může čerpat limity tarifu nebo placené kredity.</p>}
           <div style={{ fontSize: 12, marginBottom: 12 }}>
             <strong>Stav: </strong>
-            {status ? (status.configured ? 'API klíč nastaven' : 'API klíč chybí') : 'kontroluji místní službu…'}
-            {status && <div style={{ color: status.secureStorage ? '#6fffc0' : '#ffc477', marginTop: 4 }}>Uložení: {status.storage}</div>}
+            {status ? (status.backend === 'ollama' ? 'Lokální režim bez klíče' : status.configured ? 'API klíč nastaven' : 'API klíč chybí') : 'kontroluji místní službu…'}
+            {status?.backend === 'gemini' && <div style={{ color: status.secureStorage ? '#6fffc0' : '#ffc477', marginTop: 4 }}>Uložení: {status.storage}</div>}
           </div>
           {status?.backend === 'gemini' && <form onSubmit={save}>
             <label htmlFor="jarvis-gemini-key" style={{ display: 'block', fontSize: 11, marginBottom: 6, letterSpacing: '0.08em' }}>GEMINI API KEY</label>
