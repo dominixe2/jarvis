@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 
-type KeyStatus = { configured: boolean; secureStorage: boolean; storage: string; backend: 'bridge' | 'gemini' }
+type KeyStatus = { configured: boolean; secureStorage: boolean; storage: string; backend: 'bridge' | 'gemini' | 'ollama' }
 
 const API = 'http://127.0.0.1:8788/api/gemini'
 
@@ -29,7 +29,7 @@ export function Settings() {
     if (open) void refreshStatus()
   }, [open])
 
-  async function chooseBackend(backend: 'bridge' | 'gemini') {
+  async function chooseBackend(backend: 'bridge' | 'gemini' | 'ollama') {
     setBusy(true)
     setMessage('')
     try {
@@ -96,26 +96,28 @@ export function Settings() {
       {open && (
         <section aria-label="Nastavení JARVIS" style={{ pointerEvents: 'auto', width: 'min(360px, calc(100vw - 32px))', padding: 18, border: '1px solid #00e5ff66', borderRadius: 12, background: 'rgba(1, 9, 16, 0.97)', boxShadow: '0 0 35px #00e5ff20' }}>
           <h2 style={{ margin: '0 0 8px', fontSize: 16, letterSpacing: '0.12em', fontWeight: 600 }}>JARVIS / NASTAVENÍ</h2>
-          <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.5, color: '#94bfc8' }}>Gemini API klíč se ukládá šifrovaně pomocí ochrany Windows DPAPI. Klíč se neposílá do klientského JavaScriptu.</p>
+          <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.5, color: '#94bfc8' }}>V režimu Ollama nepotřebuješ účet ani API klíč. Pokud zvolíš Gemini, klíč se ukládá šifrovaně pomocí Windows DPAPI a neposílá se do klientského JavaScriptu.</p>
           <label htmlFor="jarvis-backend" style={{ display: 'block', fontSize: 11, marginBottom: 6, letterSpacing: '0.08em' }}>REŽIM ASISTENTA</label>
           <select
             id="jarvis-backend"
             value={status?.backend ?? 'bridge'}
             disabled={busy || !status}
-            onChange={(event) => void chooseBackend(event.target.value as 'bridge' | 'gemini')}
+            onChange={(event) => void chooseBackend(event.target.value as 'bridge' | 'gemini' | 'ollama')}
             style={{ width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', marginBottom: 12, background: '#06131b', color: '#d9fbff' }}
           >
+            <option value="ollama">Ollama lokálně (zdarma, bez API klíče)</option>
             <option value="bridge">Claude Code bridge (placený tarif / API kredity)</option>
             <option value="gemini">Gemini 3.8 Flash (konverzace + základní ovládání PC)</option>
           </select>
           {status?.backend === 'gemini' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>Gemini umí otevřít povolené aplikace a weby, zobrazit základní stav PC a na požádání hledat nebo číst textové soubory ve složkách Plocha, Dokumenty a Stažené soubory. Rozšířené MCP nástroje jsou v bridge režimu a vyžadují přihlášení Claude Code.</p>}
+          {status?.backend === 'ollama' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>Mozek běží lokálně na notebooku přes Ollama. Bez účtu, API klíče a poplatků. Nainstaluj Ollama a model qwen2.5:3b. Telefon musí být na stejné Wi-Fi; PC musí zůstat zapnuté. V tomto režimu je zatím dostupný chat, ne ovládání PC nástroji.</p>}
           {status?.backend === 'bridge' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#ffc477' }}>Claude Code není součástí bezplatného tarifu Claude. Vyžaduje placený tarif Pro nebo vyšší, případně účet Anthropic Console s účtovaným API. Použití může čerpat limity tarifu nebo placené kredity.</p>}
           <div style={{ fontSize: 12, marginBottom: 12 }}>
             <strong>Stav: </strong>
-            {status ? (status.configured ? 'API klíč nastaven' : 'API klíč chybí') : 'kontroluji místní službu…'}
-            {status && <div style={{ color: status.secureStorage ? '#6fffc0' : '#ffc477', marginTop: 4 }}>Uložení: {status.storage}</div>}
+            {status ? (status.backend === 'ollama' ? 'Lokální režim bez klíče' : status.configured ? 'API klíč nastaven' : 'API klíč chybí') : 'kontroluji místní službu…'}
+            {status?.backend === 'gemini' && <div style={{ color: status.secureStorage ? '#6fffc0' : '#ffc477', marginTop: 4 }}>Uložení: {status.storage}</div>}
           </div>
-          <form onSubmit={save}>
+          {status?.backend === 'gemini' && <form onSubmit={save}>
             <label htmlFor="jarvis-gemini-key" style={{ display: 'block', fontSize: 11, marginBottom: 6, letterSpacing: '0.08em' }}>GEMINI API KEY</label>
             <div style={{ display: 'flex', gap: 6 }}>
               <input
@@ -131,8 +133,8 @@ export function Settings() {
               <button type="button" onClick={() => setShowKey((value) => !value)} style={{ border: '1px solid #00e5ff55', borderRadius: 6, padding: '0 9px', background: '#06131b', color: '#9ceef5', cursor: 'pointer' }}>{showKey ? 'Skrýt' : 'Zobrazit'}</button>
             </div>
             <button type="submit" disabled={busy} style={{ marginTop: 10, width: '100%', border: 0, borderRadius: 6, padding: 11, background: busy ? '#27505a' : '#00d9ee', color: '#001016', fontWeight: 700, cursor: busy ? 'wait' : 'pointer' }}>{busy ? 'PRACUJI…' : 'BEZPEČNĚ ULOŽIT KLÍČ'}</button>
-          </form>
-          {status?.configured && <button type="button" disabled={busy} onClick={() => void removeKey()} style={{ marginTop: 8, width: '100%', border: '1px solid #ff8d8d66', borderRadius: 6, padding: 9, background: 'transparent', color: '#ffaaaa', cursor: busy ? 'wait' : 'pointer' }}>ODEBRAT ULOŽENÝ KLÍČ</button>}
+          </form>}
+          {status?.backend === 'gemini' && status.configured && <button type="button" disabled={busy} onClick={() => void removeKey()} style={{ marginTop: 8, width: '100%', border: '1px solid #ff8d8d66', borderRadius: 6, padding: 9, background: 'transparent', color: '#ffaaaa', cursor: busy ? 'wait' : 'pointer' }}>ODEBRAT ULOŽENÝ KLÍČ</button>}
           {message && <p role="status" style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: message.includes('šifrovaně') || message.includes('odebrán') ? '#6fffc0' : '#ffc477' }}>{message}</p>}
         </section>
       )}

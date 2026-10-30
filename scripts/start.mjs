@@ -25,11 +25,11 @@ function configuredBackend() {
   try {
     const file = readFileSync('.env.local', 'utf8')
     const match = file.match(/^\s*VITE_BACKEND\s*=\s*(.*?)\s*$/m)
-    if (!match) return 'gemini'
+    if (!match) return 'ollama'
     const value = match[1].replace(/^(['"])(.*)\1$/, '$2').trim().toLowerCase()
-    return value || 'gemini'
+    return value || 'ollama'
   } catch {
-    return 'gemini'
+    return 'ollama'
   }
 }
 
@@ -53,7 +53,7 @@ function vendorWasm() {
 
 const writes = process.argv.includes('--writes')
 const backend = configuredBackend()
-const needsBridge = backend !== 'gemini' && backend !== 'direct'
+const needsBridge = backend === 'bridge'
 
 // The proxy must always run: Settings uses it to save/check a Gemini key even
 // while the currently selected backend is still the local bridge.
@@ -130,6 +130,7 @@ if (needsBridge) {
 
 // npm is a shell script on most systems; call Vite directly so shell quoting is
 // not needed and process arguments behave consistently on Windows.
+run('ollama-proxy', process.execPath, ['scripts/ollama-proxy.mjs'], '33', {})
 run('face', process.execPath, ['node_modules/vite/bin/vite.js'], '35', {})
 
 console.log(

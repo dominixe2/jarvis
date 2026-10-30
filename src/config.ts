@@ -54,15 +54,15 @@ function flag(name: string, raw: unknown, fallback: boolean): boolean {
  *              your Claude Code config is available to JARVIS, including local
  *              ones like higgsfield, elevenlabs, android and playwright.
  *
- *   'direct' — the browser calls the Claude API itself. Nothing to run and it
- *              deploys as a static site, but it needs VITE_ANTHROPIC_API_KEY in
- *              the bundle and only reaches remote HTTP MCP servers.
+ *   'direct' — the browser calls the Claude API itself. It needs a client key.
+ *   'ollama' — a local model on this machine, relayed to same-Wi-Fi clients;
+ *              no account or API key, but the PC must stay on.
  */
-export const BACKEND: 'bridge' | 'direct' | 'gemini' = choice(
+export const BACKEND: 'bridge' | 'direct' | 'gemini' | 'ollama' = choice(
   'VITE_BACKEND',
   import.meta.env.VITE_BACKEND,
-  ['bridge', 'direct', 'gemini'] as const,
-  'gemini',
+  ['bridge', 'direct', 'gemini', 'ollama'] as const,
+  'ollama',
 )
 
 /**
