@@ -21,6 +21,12 @@ The existing local PC tools also run on the Windows host. A phone-only web page 
 5. Verify microphone permission, Czech recognition and speech output, interruption, reconnect, mobile layout, and install-to-home-screen behavior.
 6. Build a separately permissioned Android companion before advertising Android system control or reliable background wake-word support.
 
+## New no-key local-network path
+
+The repository now also includes an optional Ollama backend for users who want to avoid provider API keys. On the Windows notebook, install Ollama and run `ollama pull qwen2.5:3b`. Select **Ollama lokálně** in JARVIS Settings and restart. The Vite dev server is configured to be reachable from the local network and proxies `/api/ollama` to a separate chat-only relay. Open the Vite network URL on the phone while it is on the same Wi-Fi.
+
+This removes the cloud-provider key requirement for chat, but it is not a remote-access service: the notebook must remain on, the relay must not be port-forwarded, and Android browser voice APIs may not work on a plain HTTP LAN origin. It does not expose PC-control tools to the phone.
+
 ## Install after a real HTTPS deployment exists
 
 1. Open the deployed HTTPS address in Chrome on Android.
