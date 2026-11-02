@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
 import { test } from 'node:test'
 
-const gitignore = await readFile(new URL('../.gitignore', import.meta.url), 'utf8')
-const rules = new Set(gitignore.split(/\r?\n/).map((line) => line.trim()))
-
 test('local environment files are ignored while the example remains trackable', () => {
-  assert.ok(rules.has('.env'), '.env must not be committed')
-  assert.ok(rules.has('.env.*'), 'local environment variants must not be committed')
-  assert.ok(rules.has('!.env.example'), 'the safe example environment file must remain trackable')
+  const result = spawnSync(
+    'git',
+    ['check-ignore', '--no-index', '--stdin'],
+    {
+      input: ['.env', '.env.local', '.env.production', '.env.example'].join('\n'),
+      encoding: 'utf8',
+    },
+  )
+
+  assert.equal(result.error, undefined, 'git must be available in the test environment')
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(
+    result.stdout.trim().split(/\r?\n/).sort(),
+    ['.env', '.env.local', '.env.production'],
+    'only local environment files should be ignored; .env.example must remain trackable',
+  )
 })
