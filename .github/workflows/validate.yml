@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '23 6 * * 1'
   push:
-    branches: [main]
+    branches: [main, "security/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -23,9 +23,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
