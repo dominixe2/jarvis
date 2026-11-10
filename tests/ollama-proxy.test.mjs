@@ -58,27 +58,37 @@ async function startProxy(upstreamPort) {
   let output = ''
   let settled = false
   let timer
-  const token = await new Promise((resolve, reject) => {
-    const fail = (error) => {
-      if (settled) return
-      settled = true
-      clearTimeout(timer)
-      reject(error)
-    }
-    timer = setTimeout(() => fail(new Error('Ollama proxy did not print its pairing token. Output: ' + output)), 5_000)
-    child.stdout.on('data', (chunk) => {
-      output += chunk.toString()
-      const match = output.match(/one-launch pairing token: ([A-Za-z0-9_-]{43})/)
-      if (match && !settled) {
+  let token
+  try {
+    token = await new Promise((resolve, reject) => {
+      const fail = (error) => {
+        if (settled) return
         settled = true
         clearTimeout(timer)
-        resolve(match[1])
+        reject(error)
       }
+      timer = setTimeout(() => fail(new Error('Ollama proxy did not print its pairing token. Output: ' + output)), 5_000)
+      child.stdout.on('data', (chunk) => {
+        output += chunk.toString()
+        const match = output.match(/one-launch pairing token: ([A-Za-z0-9_-]{43})/)
+        if (match && !settled) {
+          settled = true
+          clearTimeout(timer)
+          resolve(match[1])
+        }
+      })
+      child.stderr.on('data', (chunk) => { output += chunk.toString() })
+      child.once('error', fail)
+      child.once('exit', (code) => fail(new Error('Ollama proxy exited before startup (' + code + '): ' + output)))
     })
-    child.stderr.on('data', (chunk) => { output += chunk.toString() })
-    child.once('error', fail)
-    child.once('exit', (code) => fail(new Error('Ollama proxy exited before startup (' + code + '): ' + output)))
-  })
+  } catch (error) {
+    if (child.exitCode === null) {
+      child.kill('SIGTERM')
+      await Promise.race([once(child, 'exit'), new Promise((resolve) => setTimeout(resolve, 1_000))])
+      if (child.exitCode === null) child.kill('SIGKILL')
+    }
+    throw error
+  }
 
   return {
     port,
@@ -101,11 +111,12 @@ test('Ollama relay requires pairing, validates requests and forwards only author
     res.end('{"message":{"content":"test response"},"done":true}\n')
   })
   const upstreamPort = await listen(upstream)
-  const proxy = await startProxy(upstreamPort)
+  let proxy
   t.after(async () => {
-    await proxy.stop()
+    if (proxy) await proxy.stop()
     await close(upstream)
   })
+  proxy = await startProxy(upstreamPort)
 
   const unauthenticated = await send(proxy.port)
   assert.equal(unauthenticated.status, 401)
