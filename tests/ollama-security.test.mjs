@@ -7,6 +7,7 @@ import {
   createSlidingWindowLimiter,
   hasValidBearerToken,
   isAllowedOrigin,
+  isValidChatPayload,
 } from '../scripts/ollama-security.mjs'
 
 test('pairing token has 256 bits of per-launch entropy in URL-safe form', () => {
@@ -71,4 +72,18 @@ test('concurrency gate caps active upstream work and releases idempotently', () 
   releaseB()
   releaseC()
   assert.equal(gate.active, 0)
+})
+
+test('chat payload validation rejects null, primitives, arrays and malformed messages', () => {
+  assert.equal(isValidChatPayload(null), false)
+  assert.equal(isValidChatPayload('not an object'), false)
+  assert.equal(isValidChatPayload([]), false)
+  assert.equal(isValidChatPayload({ messages: 'hello' }), false)
+  assert.equal(isValidChatPayload({ messages: [{ role: 'system', content: 1 }] }), false)
+  assert.equal(isValidChatPayload({ messages: [{ role: 'tool', content: 'x' }] }), false)
+  assert.equal(isValidChatPayload({ messages: Array.from({ length: 101 }, () => ({ role: 'user', content: 'x' })) }), false)
+})
+
+test('chat payload validation accepts the supported message envelope', () => {
+  assert.equal(isValidChatPayload({ messages: [{ role: 'user', content: 'Ahoj' }] }), true)
 })
