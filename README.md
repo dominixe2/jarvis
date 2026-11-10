@@ -48,14 +48,14 @@ JARVIS now has an optional **Ollama** backend. The language model runs on your o
 1. Install Ollama from [ollama.com](https://ollama.com/).
 2. Open PowerShell and run `ollama pull qwen2.5:3b` (the model download is a few GB; Ollama needs to be running).
 3. Start JARVIS with `npm start`, open Settings, choose **Ollama lokálně (zdarma, bez API klíče)**, then restart JARVIS.
-4. Open the network URL Vite prints in the terminal from a phone connected to the same Wi-Fi. Keep the notebook and JARVIS running.
-5. The phone sends chat requests to the notebook's chat-only relay on port 8789. The relay has no filesystem or PC-control tools and must not be port-forwarded to the internet.
+4. For phone access, configure JARVIS_HTTPS_CERT and JARVIS_HTTPS_KEY in .env.local with a certificate trusted by Android and the notebook, then open the HTTPS LAN URL Vite prints.
+5. Copy the one-launch pairing token from the notebook terminal into Settings on the phone. It is kept only in that browser tab's sessionStorage and expires when JARVIS stops. The Ollama relay binds to 127.0.0.1 and is reachable only through the authenticated same-origin proxy.
 
 You can change the model by setting `JARVIS_OLLAMA_MODEL` in the environment before launching JARVIS. The default is `qwen2.5:3b`. If the notebook is on a different network, this local setup will not reach it.
 
 ### Important mobile limitations
 
-This is a **local-network chat path**, not a finished native Android companion. Browsers commonly restrict microphone and speech-recognition APIs on plain HTTP LAN addresses, so text chat is the reliable first test on the phone. Reliable mobile voice, background wake word, lock-screen operation, Android permissions, and a secure remote pairing flow still need a native Android companion or a properly configured HTTPS endpoint. The PC must stay powered on to provide the local model. PC-control tools remain local and are not exposed through the Ollama relay.
+This is a **local-network chat path**, not a finished native Android companion. Phone chat requires trusted HTTPS and a per-launch token; plain HTTP LAN pages refuse to send the token. The notebook must stay powered on to provide the local model. The relay is chat-only, limited to 30 requests per minute and two concurrent generations, and exposes no PC-control tools. Reliable mobile voice, background wake word, lock-screen operation, and Android system permissions remain unimplemented.
 
 ## Separate Springtrap project
 
