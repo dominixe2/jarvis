@@ -106,7 +106,7 @@ test('Ollama relay requires pairing, validates requests and forwards only author
   let upstreamCalls = 0
   const upstream = createServer(async (req, res) => {
     upstreamCalls += 1
-    for await (const _chunk of req) { /* consume request body */ }
+    for await (const chunk of req) { void chunk }
     res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
     res.end('{"message":{"content":"test response"},"done":true}\n')
   })
