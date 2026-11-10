@@ -65,5 +65,6 @@ Springtrap's 3D character, animations, interaction logic, and character-specific
 
 - Never commit API keys, tokens, or credentials.
 - Keep write-capable computer tools disabled unless explicitly enabled on the local machine.
+- The local computer-control bridge binds only to `127.0.0.1`; phone chat uses the separate authenticated HTTPS Ollama relay and never exposes bridge tools to the LAN.
 - The legacy direct Anthropic mode still uses a Vite client variable for its key; do not use that mode for public deployments.
 - Provider free tiers and quotas can change; check the provider's current terms before relying on them.
