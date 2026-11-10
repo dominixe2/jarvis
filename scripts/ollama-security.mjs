@@ -83,3 +83,21 @@ export function createConcurrencyGate(maxActive = 2) {
     },
   }
 }
+
+export function isValidChatPayload(payload) {
+  return Boolean(
+    payload &&
+    typeof payload === 'object' &&
+    !Array.isArray(payload) &&
+    Array.isArray(payload.messages) &&
+    payload.messages.length <= 100 &&
+    payload.messages.every((message) =>
+      message &&
+      typeof message === 'object' &&
+      !Array.isArray(message) &&
+      ['system', 'user', 'assistant'].includes(message.role) &&
+      typeof message.content === 'string' &&
+      message.content.length <= 100_000
+    )
+  )
+}
