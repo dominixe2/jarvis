@@ -9,6 +9,7 @@ import {
   createSlidingWindowLimiter,
   hasValidBearerToken,
   isAllowedOrigin,
+  isValidChatPayload,
 } from './ollama-security.mjs'
 
 const PORT = Number(process.env.JARVIS_OLLAMA_PORT || 8789)
@@ -78,9 +79,7 @@ const server = createServer(async (req, res) => {
   } catch (error) {
     return json(res, error.status || 400, { error: error instanceof Error ? error.message : 'Neplatný JSON.' })
   }
-  if (!Array.isArray(payload.messages) || payload.messages.length > 100 ||
-      payload.messages.some((message) => !message || !['system', 'user', 'assistant'].includes(message.role) ||
-        typeof message.content !== 'string' || message.content.length > 100_000)) {
+  if (!isValidChatPayload(payload)) {
     return json(res, 400, { error: 'Zprávy mají neplatný formát.' })
   }
 
