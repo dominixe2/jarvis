@@ -144,7 +144,7 @@ export function Settings() {
             <form onSubmit={savePairingToken}>
               <label htmlFor="jarvis-ollama-token" style={{ display: 'block', marginBottom: 6 }}>PÁROVACÍ TOKEN Z TERMINÁLU</label>
               <input id="jarvis-ollama-token" type="password" autoComplete="off" spellCheck={false} value={pairingTokenValue} onChange={(event) => setPairingTokenValue(event.target.value)} placeholder="Vlož token z terminálu…" style={{ boxSizing: 'border-box', width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', background: '#06131b', color: '#d9fbff' }} />
-              <button type="submit" disabled={pairingTokenValue.trim().length < 32} style={{ marginTop: 8, width: '100%', border: 0, borderRadius: 6, padding: 10, background: '#00d9ee', color: '#001016', fontWeight: 700, cursor: 'pointer' }}>SPÁROVAT TUTO KARTU</button>
+              <button type="submit" disabled={!/^[A-Za-z0-9_-]{43}$/.test(pairingTokenValue.trim())} style={{ marginTop: 8, width: '100%', border: 0, borderRadius: 6, padding: 10, background: '#00d9ee', color: '#001016', fontWeight: 700, cursor: 'pointer' }}>SPÁROVAT TUTO KARTU</button>
             </form>
             <p role="status">Stav párování: {ollamaPaired ? 'token uložen pouze pro tuto kartu' : 'nepřipojeno'}</p>
             {ollamaPaired && <button type="button" onClick={disconnectOllama} style={{ width: '100%', border: '1px solid #ff8d8d66', borderRadius: 6, padding: 9, background: 'transparent', color: '#ffaaaa', cursor: 'pointer' }}>ODPOJIT TUTO KARTU</button>}
