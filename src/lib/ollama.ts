@@ -43,7 +43,7 @@ export function hasOllamaPairingToken(): boolean {
 export function saveOllamaPairingToken(value: string): void {
   assertSecureTransport()
   const token = value.trim()
-  if (token.length < 32) throw new Error('Párovací token je neplatný nebo příliš krátký.')
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new Error('Párovací token nemá platný formát.')
   window.sessionStorage.setItem(PAIRING_TOKEN_KEY, token)
 }
 
@@ -64,6 +64,7 @@ function endpoint(): string {
   if (typeof window === 'undefined') return 'http://127.0.0.1:8789/api/chat'
   return window.location.origin + '/api/ollama'
 }
+
 export async function ask(
   history: Msg[],
   handlers: AskHandlers,
