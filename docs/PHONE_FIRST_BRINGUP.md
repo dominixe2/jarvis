@@ -23,9 +23,13 @@ The existing local PC tools also run on the Windows host. A phone-only web page 
 
 ## New no-key local-network path
 
-The repository now also includes an optional Ollama backend for users who want to avoid provider API keys. On the Windows notebook, install Ollama and run `ollama pull qwen2.5:3b`. Select **Ollama lokálně** in JARVIS Settings and restart. The Vite dev server is configured to be reachable from the local network and proxies `/api/ollama` to a separate chat-only relay. Open the Vite network URL on the phone while it is on the same Wi-Fi.
+The optional Ollama backend runs the model on the Windows notebook without a provider account or API key. Install Ollama and run ollama pull qwen2.5:3b, select Ollama in JARVIS Settings, and restart.
 
-This removes the cloud-provider key requirement for chat, but it is not a remote-access service: the notebook must remain on, the relay must not be port-forwarded, and Android browser voice APIs may not work on a plain HTTP LAN origin. It does not expose PC-control tools to the phone.
+The Ollama relay now binds only to 127.0.0.1. The phone reaches it through the Vite same-origin proxy, which requires a per-launch bearer token. The token is generated in memory, printed once in the notebook terminal, and becomes invalid when JARVIS stops. Enter it in Settings on each phone/browser tab; it is stored in sessionStorage, not localStorage. You can revoke the tab's copy with the disconnect button.
+
+**Phone access is HTTPS-only.** Configure JARVIS_HTTPS_CERT and JARVIS_HTTPS_KEY in .env.local with a certificate whose name matches the notebook URL and whose issuing CA is trusted by both the notebook and Android. Vite loads these server-only paths and does not bundle the certificate or private key. Open the HTTPS LAN URL on the phone, then paste the token from the terminal. If HTTPS is not configured or the certificate is not trusted, the browser client refuses to send the token. Plain HTTP remains available only for loopback use on the notebook itself.
+
+The relay is chat-only: it has no filesystem, shell, or PC-control tools. It applies a 30-request sliding-window limit and allows at most two simultaneous upstream generations. Do not port-forward the relay or Vite server to the public internet. The notebook and Ollama must remain running. This is an authenticated local-network chat path, not a finished native Android companion or proof of physical-device compatibility.
 
 ## Install after a real HTTPS deployment exists
 
