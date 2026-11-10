@@ -1,29 +1,23 @@
 /**
- * LAN-safe, chat-only Ollama relay for JARVIS.
- * It exposes no filesystem, shell, or PC-control tools. It only forwards chat
- * requests to Ollama on this same PC. Do not port-forward this service.
+ * Authenticated, chat-only Ollama relay for JARVIS.
+ * The relay binds to loopback; LAN clients must use the HTTPS Vite proxy.
  */
 import { createServer } from 'node:http'
+import {
+  createConcurrencyGate,
+  createPairingToken,
+  createSlidingWindowLimiter,
+  hasValidBearerToken,
+  isAllowedOrigin,
+} from './ollama-security.mjs'
 
 const PORT = Number(process.env.JARVIS_OLLAMA_PORT || 8789)
 const UPSTREAM = process.env.OLLAMA_URL || 'http://127.0.0.1:11434/api/chat'
+const MODEL = process.env.JARVIS_OLLAMA_MODEL || 'qwen2.5:3b'
 const MAX_BODY = 1_000_000
-
-function allowedOrigin(origin, hostHeader) {
-  if (!origin || !hostHeader) return false
-  let originUrl
-  let requestUrl
-  try {
-    originUrl = new URL(origin)
-    requestUrl = new URL('http://' + hostHeader)
-  } catch {
-    return false
-  }
-  if (originUrl.protocol !== 'http:') return false
-  if (originUrl.hostname !== requestUrl.hostname) return false
-  const port = Number(originUrl.port)
-  return (port >= 5173 && port <= 5199) || (port >= 4173 && port <= 4199)
-}
+const PAIRING_TOKEN = createPairingToken()
+const allowRequest = createSlidingWindowLimiter({ limit: 30, windowMs: 60_000, maxKeys: 128 })
+const upstreamSlots = createConcurrencyGate(2)
 
 function json(res, status, value) {
   res.writeHead(status, {
@@ -47,14 +41,14 @@ async function readBody(req) {
 
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin
-  if (!allowedOrigin(origin, req.headers.host)) {
-    return json(res, 403, { error: 'Přístup je povolen jen z místního rozhraní JARVIS na stejné síti.' })
+  if (!isAllowedOrigin(origin, req.headers.host)) {
+    return json(res, 403, { error: 'Přístup je povolen pouze z povoleného rozhraní JARVIS.' })
   }
 
   res.setHeader('Access-Control-Allow-Origin', origin)
   res.setHeader('Vary', 'Origin')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type')
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204)
@@ -67,6 +61,17 @@ const server = createServer(async (req, res) => {
     return json(res, 415, { error: 'Očekává se JSON.' })
   }
 
+  // Vite proxies requests over loopback, so this is a shared per-server limit.
+  if (!allowRequest(req.socket.remoteAddress || 'unknown')) {
+    return json(res, 429, { error: 'Příliš mnoho požadavků. Chvíli počkej.' })
+  }
+  if (!hasValidBearerToken(req.headers.authorization, PAIRING_TOKEN)) {
+    return json(res, 401, { error: 'Chybí platný párovací token. Vlož aktuální token z terminálu v Nastavení.' })
+  }
+  if (Number(req.headers['content-length'] || 0) > MAX_BODY) {
+    return json(res, 413, { error: 'Požadavek je příliš velký.' })
+  }
+
   let payload
   try {
     payload = JSON.parse(await readBody(req))
@@ -74,10 +79,13 @@ const server = createServer(async (req, res) => {
     return json(res, error.status || 400, { error: error instanceof Error ? error.message : 'Neplatný JSON.' })
   }
   if (!Array.isArray(payload.messages) || payload.messages.length > 100 ||
-      payload.messages.some((m) => !m || !['system', 'user', 'assistant'].includes(m.role) ||
-        typeof m.content !== 'string' || m.content.length > 100_000)) {
+      payload.messages.some((message) => !message || !['system', 'user', 'assistant'].includes(message.role) ||
+        typeof message.content !== 'string' || message.content.length > 100_000)) {
     return json(res, 400, { error: 'Zprávy mají neplatný formát.' })
   }
+
+  const release = upstreamSlots.tryAcquire()
+  if (!release) return json(res, 503, { error: 'Místní AI je právě vytížená. Zkus to za chvíli.' })
 
   const controller = new AbortController()
   req.on('aborted', () => controller.abort())
@@ -90,7 +98,7 @@ const server = createServer(async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: process.env.JARVIS_OLLAMA_MODEL || 'qwen2.5:3b',
+        model: MODEL,
         messages: payload.messages,
         stream: true,
       }),
@@ -100,7 +108,7 @@ const server = createServer(async (req, res) => {
       const detail = await upstream.text().catch(() => '')
       return json(res, upstream.status === 404 ? 503 : 502, {
         error: upstream.status === 404
-          ? 'Model Qwen2.5:3b nenalezen. Na notebooku spusť: ollama pull qwen2.5:3b'
+          ? 'Model ' + MODEL + ' nebyl nalezen. Stáhni jej pomocí Ollama.'
           : 'Ollama vrátila HTTP ' + upstream.status + (detail ? '. ' + detail.slice(0, 180) : ''),
       })
     }
@@ -122,10 +130,12 @@ const server = createServer(async (req, res) => {
         ? 'Místní AI odpovídá příliš dlouho.'
         : 'Ollama není dostupná. Spusť Ollama na notebooku a ověř, že běží na portu 11434.',
     })
+  } finally {
+    release()
   }
 })
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('[ollama-proxy] chat-only relay listening on port ' + PORT + '; upstream is ' + UPSTREAM)
-  console.log('[ollama-proxy] Do not expose this port to the public internet.')
+server.listen(PORT, '127.0.0.1', () => {
+  console.log('[ollama-proxy] chat-only relay bound to 127.0.0.1:' + PORT)
+  console.log('[ollama-proxy] one-launch pairing token: ' + PAIRING_TOKEN)
 })
