@@ -23,7 +23,7 @@ The launcher installs npm dependencies on first run. JARVIS currently runs local
 
 ## Backends and voice
 
-The default backend is Gemini 3.8 Flash, which has a free API tier subject to Google's rate limits and includes a restricted set of local PC tools. Claude Code is not included in Claude's Free plan: its subscription access requires Pro (currently $20/month or $17/month with annual billing) or a higher eligible plan; a Claude Console account can use it with separately billed API tokens. The optional Claude Code bridge exposes configured MCP integrations, but may consume subscription limits or paid API credits. Keep Gemini selected if you want to avoid a Claude subscription. Browser speech synthesis is the default voice output. Optional integrations such as Groq and Fish Audio must be implemented and tested before being advertised as available.
+The default backend is now local Ollama, which needs no API key. Gemini 3.8 Flash remains an optional backend with a free API tier subject to Google's rate limits and includes a restricted set of local PC tools. Claude Code is not included in Claude's Free plan: its subscription access requires Pro (currently $20/month or $17/month with annual billing) or a higher eligible plan; a Claude Console account can use it with separately billed API tokens. The optional Claude Code bridge exposes configured MCP integrations, but may consume subscription limits or paid API credits. Use Ollama for no-key local operation; choose Gemini only if you prefer its cloud model and accept its account, quota, and data-handling terms. Browser speech synthesis is the default voice output. Optional integrations such as Groq and Fish Audio must be implemented and tested before being advertised as available.
 
 The default language is Czech. Browser speech recognition requests `cs-CZ`, and spoken output prefers an installed Czech system voice. For best results, use a current Chrome or Edge build and install a Czech speech voice in Windows if none is available. Wake-word recognition and the free browser voice path require an active internet connection in supported browsers.
 
@@ -39,6 +39,24 @@ Gemini mode uses the current Gemini 3.8 Flash model and includes a restricted lo
 
 Use Node.js 20 or newer. Install dependencies with `npm install`, then run `npm run setup` for an advisory preflight check. Start the app using `npm start`. Keep the terminal open while JARVIS runs. Press Ctrl+C in that window to stop it. To diagnose prerequisites without changing anything, run `npm run setup`.
 
+## Free local AI (no API key)
+
+JARVIS now has an optional **Ollama** backend. The language model runs on your own notebook, so there is no provider account, API key, subscription, or per-message fee. The first model download uses internet and takes disk space; after that, inference runs locally. Speed and answer quality depend on your hardware.
+
+### Set up on the Windows notebook
+
+1. Install Ollama from [ollama.com](https://ollama.com/).
+2. Open PowerShell and run `ollama pull qwen2.5:3b` (the model download is a few GB; Ollama needs to be running).
+3. Start JARVIS with `npm start`, open Settings, choose **Ollama lokálně (zdarma, bez API klíče)**, then restart JARVIS.
+4. For phone access, configure JARVIS_HTTPS_CERT and JARVIS_HTTPS_KEY in .env.local with a certificate trusted by Android and the notebook, then open the HTTPS LAN URL Vite prints.
+5. Copy the one-launch pairing token from the notebook terminal into Settings on the phone. It is kept only in that browser tab's sessionStorage and expires when JARVIS stops. The Ollama relay binds to 127.0.0.1 and is reachable only through the authenticated same-origin proxy.
+
+You can change the model by setting `JARVIS_OLLAMA_MODEL` in the environment before launching JARVIS. The default is `qwen2.5:3b`. If the notebook is on a different network, this local setup will not reach it.
+
+### Important mobile limitations
+
+This is a **local-network chat path**, not a finished native Android companion. Phone chat requires trusted HTTPS and a per-launch token; plain HTTP LAN pages refuse to send the token. The notebook must stay powered on to provide the local model. The relay is chat-only, limited to 30 requests per minute and two concurrent generations, and exposes no PC-control tools. Reliable mobile voice, background wake word, lock-screen operation, and Android system permissions remain unimplemented.
+
 ## Separate Springtrap project
 
 Springtrap's 3D character, animations, interaction logic, and character-specific AI live in the separate [Springtrap repository](https://github.com/dominixe2/springtrap-). Keep this JARVIS repository focused on the assistant HUD, voice loop, and computer-control bridge.
@@ -47,5 +65,6 @@ Springtrap's 3D character, animations, interaction logic, and character-specific
 
 - Never commit API keys, tokens, or credentials.
 - Keep write-capable computer tools disabled unless explicitly enabled on the local machine.
+- The local computer-control bridge binds only to `127.0.0.1`; phone chat uses the separate authenticated HTTPS Ollama relay and never exposes bridge tools to the LAN.
 - The legacy direct Anthropic mode still uses a Vite client variable for its key; do not use that mode for public deployments.
 - Provider free tiers and quotas can change; check the provider's current terms before relying on them.
