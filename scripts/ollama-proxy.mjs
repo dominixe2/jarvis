@@ -104,11 +104,12 @@ const server = createServer(async (req, res) => {
       signal: AbortSignal.any([controller.signal, AbortSignal.timeout(180_000)]),
     })
     if (!upstream.ok) {
-      const detail = await upstream.text().catch(() => '')
+      // Upstream error bodies can echo prompts, internal URLs or other private
+      // details. Keep the client response to a safe status/category only.
       return json(res, upstream.status === 404 ? 503 : 502, {
         error: upstream.status === 404
           ? 'Model ' + MODEL + ' nebyl nalezen. Stáhni jej pomocí Ollama.'
-          : 'Ollama vrátila HTTP ' + upstream.status + (detail ? '. ' + detail.slice(0, 180) : ''),
+          : 'Ollama vrátila HTTP ' + upstream.status + '. Zkontroluj místní model.',
       })
     }
     if (!upstream.body) return json(res, 502, { error: 'Ollama nevrátila stream.' })
