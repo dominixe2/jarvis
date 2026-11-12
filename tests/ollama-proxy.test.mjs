@@ -135,3 +135,23 @@ test('Ollama relay requires pairing, validates requests and forwards only author
   assert.match(authorized.body, /test response/)
   assert.equal(upstreamCalls, 1)
 })
+test('Ollama upstream error details are not reflected to the paired client', async (t) => {
+  const privateDetail = 'PRIVATE_PROMPT_FRAGMENT token=upstream-secret';
+  const upstream = createServer(async (req, res) => {
+    for await (const chunk of req) { void chunk }
+    res.writeHead(502, { 'Content-Type': 'text/plain' });
+    res.end(privateDetail);
+  });
+  const upstreamPort = await listen(upstream);
+  let proxy;
+  t.after(async () => {
+    if (proxy) await proxy.stop();
+    await close(upstream);
+  });
+  proxy = await startProxy(upstreamPort);
+
+  const response = await send(proxy.port, { token: proxy.token });
+  assert.equal(response.status, 502);
+  assert.match(response.body, /Ollama vrátila HTTP 502/);
+  assert.doesNotMatch(response.body, /PRIVATE_PROMPT_FRAGMENT|upstream-secret/);
+});
