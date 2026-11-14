@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { BACKEND } from '../config'
-import { clearOllamaPairingToken, hasOllamaPairingToken, saveOllamaPairingToken } from '../lib/ollama'
+import { checkOllamaPairing, pairOllama, unpairOllama } from '../lib/ollama'
 
 type KeyStatus = { configured: boolean; secureStorage: boolean; storage: string; backend: 'bridge' | 'gemini' | 'ollama' }
 
@@ -13,7 +13,7 @@ export function Settings() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [showKey, setShowKey] = useState(false)
-  const [pairingTokenValue, setPairingTokenValue] = useState('')
+  const [pairingCodeValue, setPairingCodeValue] = useState('')
   const [ollamaPaired, setOllamaPaired] = useState(false)
   const ollamaMode = status?.backend === 'ollama' || BACKEND === 'ollama'
 
@@ -35,7 +35,7 @@ export function Settings() {
   useEffect(() => {
     if (open) {
       void refreshStatus()
-      setOllamaPaired(hasOllamaPairingToken())
+      void checkOllamaPairing().then(setOllamaPaired).catch(() => setOllamaPaired(false))
     }
   }, [open])
 
@@ -59,22 +59,32 @@ export function Settings() {
     }
   }
 
-  function savePairingToken(event: FormEvent) {
+  async function savePairingCode(event: FormEvent) {
     event.preventDefault()
+    setBusy(true)
     try {
-      saveOllamaPairingToken(pairingTokenValue)
-      setPairingTokenValue('')
+      await pairOllama(pairingCodeValue)
+      setPairingCodeValue('')
       setOllamaPaired(true)
-      setMessage('Zařízení je spárované. Token zůstává pouze v sessionStorage této karty.')
+      setMessage('Zařízení je spárované. Relace je v HttpOnly cookie; JavaScript ji nečte ani neukládá do Web Storage.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Párovací token se nepodařilo uložit.')
+      setMessage(error instanceof Error ? error.message : 'Párování se nepodařilo.')
+    } finally {
+      setBusy(false)
     }
   }
 
-  function disconnectOllama() {
-    clearOllamaPairingToken()
-    setOllamaPaired(false)
-    setMessage('Párovací token byl z této karty odebrán.')
+  async function disconnectOllama() {
+    setBusy(true)
+    try {
+      await unpairOllama()
+      setOllamaPaired(false)
+      setMessage('Zařízení bylo odpojeno a stará relace zrušena.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Odpojení se nepodařilo.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function save(event: FormEvent) {
@@ -139,15 +149,15 @@ export function Settings() {
           </select>
           {status?.backend === 'gemini' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>Gemini umí otevřít povolené aplikace a weby, zobrazit základní stav PC a na požádání hledat nebo číst textové soubory ve složkách Plocha, Dokumenty a Stažené soubory. Rozšířené MCP nástroje jsou v bridge režimu a vyžadují přihlášení Claude Code.</p>}
           {ollamaMode && <div style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#9ceef5' }}>
-            <p>Mozek běží lokálně na notebooku přes Ollama. Bez účtu a API klíče. Telefon musí být na stejné Wi-Fi a notebook zůstat zapnutý. Telefonní přístup vyžaduje HTTPS s certifikátem důvěryhodným Androidem; přes HTTP se token neposílá.</p>
-            <p>Po startu JARVIS zkopíruj jednorázový párovací token z terminálu. Platí jen do ukončení procesu.</p>
-            <form onSubmit={savePairingToken}>
-              <label htmlFor="jarvis-ollama-token" style={{ display: 'block', marginBottom: 6 }}>PÁROVACÍ TOKEN Z TERMINÁLU</label>
-              <input id="jarvis-ollama-token" type="password" autoComplete="off" spellCheck={false} value={pairingTokenValue} onChange={(event) => setPairingTokenValue(event.target.value)} placeholder="Vlož token z terminálu…" style={{ boxSizing: 'border-box', width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', background: '#06131b', color: '#d9fbff' }} />
-              <button type="submit" disabled={!/^[A-Za-z0-9_-]{43}$/.test(pairingTokenValue.trim())} style={{ marginTop: 8, width: '100%', border: 0, borderRadius: 6, padding: 10, background: '#00d9ee', color: '#001016', fontWeight: 700, cursor: 'pointer' }}>SPÁROVAT TUTO KARTU</button>
+            <p>Mozek běží lokálně na notebooku přes Ollama. Bez účtu a API klíče. Telefon musí být na stejné Wi-Fi a notebook zůstat zapnutý. Telefonní přístup vyžaduje HTTPS s certifikátem důvěryhodným Androidem.</p>
+            <p>Na notebooku otevři místní párovací stránku na adrese 127.0.0.1 vypsané při spuštění JARVIS. Šestimístný kód se zobrazuje pouze na této místní stránce, nikdy v terminálu ani v logu.</p>
+            <form onSubmit={savePairingCode}>
+              <label htmlFor="jarvis-ollama-code" style={{ display: 'block', marginBottom: 6 }}>JEDNORÁZOVÝ PÁROVACÍ KÓD</label>
+              <input id="jarvis-ollama-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={pairingCodeValue} onChange={(event) => setPairingCodeValue(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="Šest číslic z notebooku…" style={{ boxSizing: 'border-box', width: '100%', border: '1px solid #00e5ff55', borderRadius: 6, padding: '10px 9px', background: '#06131b', color: '#d9fbff', letterSpacing: '0.2em' }} />
+              <button type="submit" disabled={busy || !/^\d{6}$/.test(pairingCodeValue)} style={{ marginTop: 8, width: '100%', border: 0, borderRadius: 6, padding: 10, background: '#00d9ee', color: '#001016', fontWeight: 700, cursor: 'pointer' }}>SPÁROVAT TOTO ZAŘÍZENÍ</button>
             </form>
-            <p role="status">Stav párování: {ollamaPaired ? 'token uložen pouze pro tuto kartu' : 'nepřipojeno'}</p>
-            {ollamaPaired && <button type="button" onClick={disconnectOllama} style={{ width: '100%', border: '1px solid #ff8d8d66', borderRadius: 6, padding: 9, background: 'transparent', color: '#ffaaaa', cursor: 'pointer' }}>ODPOJIT TUTO KARTU</button>}
+            <p role="status">Stav párování: {ollamaPaired ? 'aktivní zabezpečená relace' : 'nepřipojeno'}</p>
+            {ollamaPaired && <button type="button" disabled={busy} onClick={disconnectOllama} style={{ width: '100%', border: '1px solid #ff8d8d66', borderRadius: 6, padding: 9, background: 'transparent', color: '#ffaaaa', cursor: 'pointer' }}>ODPOJIT TOTO ZAŘÍZENÍ</button>}
           </div>}
           {status?.backend === 'bridge' && <p style={{ margin: '-4px 0 12px', fontSize: 11, lineHeight: 1.5, color: '#ffc477' }}>Claude Code není součástí bezplatného tarifu Claude. Vyžaduje placený tarif Pro nebo vyšší, případně účet Anthropic Console s účtovaným API. Použití může čerpat limity tarifu nebo placené kredity.</p>}
           <div style={{ fontSize: 12, marginBottom: 12 }}>
