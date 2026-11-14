@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
         '/api/ollama': {
           target: 'http://127.0.0.1:8789',
           changeOrigin: false,
-          rewrite: (path) => path.replace(/^\\/api\\/ollama/, '/api'),
+          rewrite: (path) => path.replace(/^\/api\/ollama/, '/api'),
         },
       },
     },
