@@ -51,6 +51,19 @@ function requestJson(port, path, {
   })
 }
 
+
+function requestStatus(port, path, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest({ hostname: '127.0.0.1', port, path, method: 'GET', headers }, (res) => {
+      const chunks = []
+      res.on('data', (chunk) => chunks.push(chunk))
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8'), headers: res.headers }))
+    })
+    req.on('error', reject)
+    req.end()
+  })
+}
+
 async function startProxy(upstreamPort) {
   const proxyProbe = createServer()
   const port = await listen(proxyProbe)
@@ -151,6 +164,8 @@ test('Ollama relay pairs once, keeps the session HttpOnly and forwards only auth
   const unauthenticated = await requestJson(proxy.port, '/api/chat')
   assert.equal(unauthenticated.status, 401)
   assert.equal(upstreamCalls, 0)
+  const legacyBearerOnly = await requestJson(proxy.port, '/api/chat', { authorization: 'Bearer obsolete-test-value' })
+  assert.equal(legacyBearerOnly.status, 401)
 
   const wrongOrigin = await requestJson(proxy.port, '/api/pair', {
     origin: 'http://attacker.example:5173',
@@ -223,6 +238,11 @@ test('pairing code is available only from the loopback no-store status page', as
 
   const response = await fetch(proxy.statusUrl + '/status', { cache: 'no-store' })
   const data = await response.json()
+  const statusPort = Number(new URL(proxy.statusUrl).port)
+  const foreignHost = await requestStatus(statusPort, '/status', { host: 'attacker.example', 'sec-fetch-site': 'cross-site' })
+  assert.equal(foreignHost.status, 403)
+  const crossSite = await requestStatus(statusPort, '/status', { host: '127.0.0.1:' + statusPort, 'sec-fetch-site': 'cross-site' })
+  assert.equal(crossSite.status, 403)
   assert.equal(response.status, 200)
   assert.equal(data.pairing_code, proxy.code)
   assert.match(response.headers.get('cache-control'), /no-store/i)
