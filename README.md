@@ -49,7 +49,7 @@ JARVIS now has an optional **Ollama** backend. The language model runs on your o
 2. Open PowerShell and run `ollama pull qwen2.5:3b` (the model download is a few GB; Ollama needs to be running).
 3. Start JARVIS with `npm start`, open Settings, choose **Ollama lokálně (zdarma, bez API klíče)**, then restart JARVIS.
 4. For phone access, configure JARVIS_HTTPS_CERT and JARVIS_HTTPS_KEY in .env.local with a certificate trusted by Android and the notebook, then open the HTTPS LAN URL Vite prints.
-5. Copy the one-launch pairing token from the notebook terminal into Settings on the phone. It is kept only in that browser tab's sessionStorage and expires when JARVIS stops. The Ollama relay binds to 127.0.0.1 and is reachable only through the authenticated same-origin proxy.
+5. Open the local pairing page on the notebook using the 127.0.0.1 URL printed at startup; the six-digit code appears only in that local page, never in the terminal or logs. Enter the code in Settings on the phone. The same-origin HTTPS proxy exchanges it for an HttpOnly, SameSite=Strict session cookie; JavaScript cannot read or store the session value. The Ollama relay binds to 127.0.0.1 and remains chat-only.
 
 You can change the model by setting `JARVIS_OLLAMA_MODEL` in the environment before launching JARVIS. The default is `qwen2.5:3b`. If the notebook is on a different network, this local setup will not reach it.
 
