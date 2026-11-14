@@ -31,9 +31,19 @@ test('session values are stored as deterministic SHA-256 hashes and compared saf
   assert.equal(safeEqualText(undefined, '654321'), false)
 })
 
-test('origin validation accepts matching local dev and HTTPS origins', () => {
+test('origin validation accepts loopback, private LAN, ULA and local hostnames', () => {
+  assert.equal(isAllowedOrigin('http://127.0.0.1:5173', '127.0.0.1:5173'), true)
+  assert.equal(isAllowedOrigin('http://10.0.0.5:5173', '10.0.0.5:5173'), true)
+  assert.equal(isAllowedOrigin('http://172.16.4.5:5173', '172.16.4.5:5173'), true)
   assert.equal(isAllowedOrigin('http://192.168.1.10:5173', '192.168.1.10:5173'), true)
+  assert.equal(isAllowedOrigin('https://[fd12::1]:4173', '[fd12::1]:4173'), true)
   assert.equal(isAllowedOrigin('https://jarvis.local:4173', 'jarvis.local:4173'), true)
+})
+
+test('origin validation rejects public hosts even when Origin and Host match', () => {
+  assert.equal(isAllowedOrigin('https://attacker.example:5173', 'attacker.example:5173'), false)
+  assert.equal(isAllowedOrigin('http://8.8.8.8:5173', '8.8.8.8:5173'), false)
+  assert.equal(isAllowedOrigin('https://203.0.113.10:5173', '203.0.113.10:5173'), false)
 })
 
 test('origin validation rejects host, port, scheme, path and port-range mismatches', () => {
