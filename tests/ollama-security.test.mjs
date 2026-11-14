@@ -3,27 +3,32 @@ import test from 'node:test'
 
 import {
   createConcurrencyGate,
-  createPairingToken,
+  createPairingCode,
+  createSessionToken,
   createSlidingWindowLimiter,
-  hasValidBearerToken,
+  hashSessionToken,
   isAllowedOrigin,
   isValidChatPayload,
+  safeEqualText,
 } from '../scripts/ollama-security.mjs'
 
-test('pairing token has 256 bits of per-launch entropy in URL-safe form', () => {
-  const first = createPairingToken()
-  const second = createPairingToken()
+test('pairing code is six numeric digits and session token has 256 bits of entropy', () => {
+  assert.match(createPairingCode(), /^\\d{6}$/)
+  const first = createSessionToken()
+  const second = createSessionToken()
   assert.match(first, /^[A-Za-z0-9_-]{43}$/)
   assert.notEqual(first, second)
 })
 
-test('bearer validation accepts only the exact token', () => {
-  const token = createPairingToken()
-  assert.equal(hasValidBearerToken('Bearer ' + token, token), true)
-  assert.equal(hasValidBearerToken('bearer ' + token, token), false)
-  assert.equal(hasValidBearerToken('Bearer ' + token + 'x', token), false)
-  assert.equal(hasValidBearerToken('Bearer wrong', token), false)
-  assert.equal(hasValidBearerToken(undefined, token), false)
+test('session values are stored as deterministic SHA-256 hashes and compared safely', () => {
+  const token = createSessionToken()
+  const hash = hashSessionToken(token)
+  assert.match(hash, /^[a-f0-9]{64}$/)
+  assert.equal(hashSessionToken(token), hash)
+  assert.equal(safeEqualText('654321', '654321'), true)
+  assert.equal(safeEqualText('654321', '654322'), false)
+  assert.equal(safeEqualText('654321', '6'), false)
+  assert.equal(safeEqualText(undefined, '654321'), false)
 })
 
 test('origin validation accepts matching local dev and HTTPS origins', () => {
