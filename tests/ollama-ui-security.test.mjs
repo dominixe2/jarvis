@@ -8,10 +8,11 @@ const proxy = readFileSync(new URL('../scripts/ollama-proxy.mjs', import.meta.ur
 const vite = readFileSync(new URL('../vite.config.ts', import.meta.url), 'utf8')
 
 test('JARVIS browser pairing never stores or sends a bearer secret through JavaScript', () => {
-  assert.doesNotMatch(ollamaClient, /sessionStorage|localStorage|Authorization\\s*:/i)
+  assert.doesNotMatch(ollamaClient, /sessionStorage\.(?:getItem|setItem)|localStorage\.(?:getItem|setItem)|Authorization\s*:/i)
+  assert.match(ollamaClient, /sessionStorage\.removeItem\('jarvis_ollama_pairing_token'\)/)
   assert.doesNotMatch(settings, /sessionStorage|localStorage|pairingTokenValue|PÁROVACÍ TOKEN Z TERMINÁLU/i)
   assert.match(settings, /HttpOnly cookie/)
-  assert.doesNotMatch(proxy, /console\\.log\\([^)]*(?:pairingCode|sessionToken|PAIRING_CODE|Bearer)/i)
+  assert.doesNotMatch(proxy, /console\.log\([^)]*(?:pairingCode|sessionToken|PAIRING_CODE|Bearer)/i)
 })
 
 test('Ollama relay and local pairing status page bind only to loopback', () => {
@@ -20,5 +21,5 @@ test('Ollama relay and local pairing status page bind only to loopback', () => {
 })
 
 test('Vite keeps pairing, status, unpair and chat paths on the same-origin relay', () => {
-  assert.ok(vite.includes("rewrite: (path) => path.replace(/^\\\\/api\\\\/ollama/, '/api'),"))
+  assert.ok(vite.includes("rewrite: (path) => path.replace(/^\\/api\\/ollama/, '/api'),"))
 })
