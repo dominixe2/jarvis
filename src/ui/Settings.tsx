@@ -183,7 +183,7 @@ export function Settings() {
             <button type="submit" disabled={busy} style={{ marginTop: 10, width: '100%', border: 0, borderRadius: 6, padding: 11, background: busy ? '#27505a' : '#00d9ee', color: '#001016', fontWeight: 700, cursor: busy ? 'wait' : 'pointer' }}>{busy ? 'PRACUJI…' : 'BEZPEČNĚ ULOŽIT KLÍČ'}</button>
           </form>}
           {status?.backend === 'gemini' && status.configured && <button type="button" disabled={busy} onClick={() => void removeKey()} style={{ marginTop: 8, width: '100%', border: '1px solid #ff8d8d66', borderRadius: 6, padding: 9, background: 'transparent', color: '#ffaaaa', cursor: busy ? 'wait' : 'pointer' }}>ODEBRAT ULOŽENÝ KLÍČ</button>}
-          {message && <p role="status" style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: message.includes('šifrovaně') || message.includes('odebrán') ? '#6fffc0' : '#ffc477' }}>{message}</p>}
+          {message && <p role="status" style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: message.includes('šifrovaně') || message.includes('odebrán') || message.includes('spárované') || message.includes('odpojeno') ? '#6fffc0' : '#ffc477' }}>{message}</p>}
         </section>
       )}
       <button
