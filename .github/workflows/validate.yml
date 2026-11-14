@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '23 6 * * 1'
   push:
-    branches: [main, "security/**"]
+    branches: [main, "security/**", "ci/**"]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches: [main]
