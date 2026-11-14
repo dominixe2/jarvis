@@ -22,8 +22,8 @@ export function safeEqualText(left, right) {
 
 function isLocalNetworkHostname(hostname) {
   const normalized = String(hostname || '')
-    .replace(/^\\[|\\]$/g, '')
-    .replace(/\\.$/, '')
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.$/, '')
     .toLowerCase()
 
   if (normalized === 'localhost' || normalized.endsWith('.localhost') || normalized.endsWith('.local')) {
