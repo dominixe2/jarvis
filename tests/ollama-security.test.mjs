@@ -13,7 +13,7 @@ import {
 } from '../scripts/ollama-security.mjs'
 
 test('pairing code is six numeric digits and session token has 256 bits of entropy', () => {
-  assert.match(createPairingCode(), /^\\d{6}$/)
+  assert.match(createPairingCode(), /^\d{6}$/)
   const first = createSessionToken()
   const second = createSessionToken()
   assert.match(first, /^[A-Za-z0-9_-]{43}$/)
