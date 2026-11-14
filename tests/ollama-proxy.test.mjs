@@ -116,6 +116,15 @@ async function startProxy(upstreamPort) {
       await new Promise((resolve) => setTimeout(resolve, 50))
     }
     if (!status?.pairing_code) throw new Error('Local pairing status did not provide a live code.')
+    let relayReady = false
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      try {
+        const response = await requestJson(port, '/api/status')
+        if (response.status === 200) { relayReady = true; break }
+      } catch { /* wait for the relay listener */ }
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
+    if (!relayReady) throw new Error('Ollama relay listener did not become ready.')
   } catch (error) {
     if (child.exitCode === null) {
       child.kill('SIGTERM')
@@ -160,6 +169,9 @@ test('Ollama relay pairs once, keeps the session HttpOnly and forwards only auth
     await close(upstream)
   })
   proxy = await startProxy(upstreamPort)
+
+  const unauthenticatedUnpair = await requestJson(proxy.port, '/api/unpair')
+  assert.equal(unauthenticatedUnpair.status, 401)
 
   const unauthenticated = await requestJson(proxy.port, '/api/chat')
   assert.equal(unauthenticated.status, 401)
