@@ -198,7 +198,7 @@ const server = createServer(async (req, res) => {
   if (req.method !== 'POST' || !['/api/pair', '/api/status', '/api/unpair', '/api/chat'].includes(req.url || '')) {
     return json(res, 404, { error: 'Nenalezeno.' })
   }
-  if (!/^application\\/json(?:;|$)/i.test(req.headers['content-type'] || '')) {
+  if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) {
     return json(res, 415, { error: 'Očekává se JSON.' })
   }
 
@@ -221,7 +221,7 @@ const server = createServer(async (req, res) => {
     }
     let body
     try { body = parseJson(await readBody(req)) } catch (error) { return json(res, error.status || 400, { error: 'Neplatný požadavek.' }) }
-    if (!body || typeof body.code !== 'string' || !/^\\d{6}$/.test(body.code)) {
+    if (!body || typeof body.code !== 'string' || !/^\d{6}$/.test(body.code)) {
       return json(res, 400, { error: 'Zadej šestimístný párovací kód.' })
     }
     if (pairingConsumed || pairingExpiresAt <= Date.now() || !safeEqualText(body.code, pairingCode)) {
