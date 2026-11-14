@@ -224,8 +224,9 @@ const server = createServer(async (req, res) => {
     if (!body || typeof body.code !== 'string' || !/^\d{6}$/.test(body.code)) {
       return json(res, 400, { error: 'Zadej šestimístný párovací kód.' })
     }
-    if (pairingConsumed || pairingExpiresAt <= Date.now() || !safeEqualText(body.code, pairingCode)) {
-      return json(res, 401, { error: 'Párovací kód je neplatný, vypršel nebo už byl použit.' })
+    if (pairingConsumed) return json(res, 409, { error: 'Párovací kód už byl použit.' })
+    if (pairingExpiresAt <= Date.now() || !safeEqualText(body.code, pairingCode)) {
+      return json(res, 401, { error: 'Párovací kód je neplatný nebo vypršel.' })
     }
     pairingConsumed = true
     const sessionToken = createSessionToken()
