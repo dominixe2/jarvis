@@ -138,7 +138,7 @@ test('Ollama relay pairs once, keeps the session HttpOnly and forwards only auth
     upstreamCalls += 1
     for await (const chunk of req) { void chunk }
     res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
-    res.end('{"message":{"content":"test response"},"done":true}\\n')
+    res.end('{"message":{"content":"test response"},"done":true}\n')
   })
   const upstreamPort = await listen(upstream)
   let proxy
@@ -200,7 +200,7 @@ test('Ollama relay pairs once, keeps the session HttpOnly and forwards only auth
   assert.equal(afterUnpair.status, 401)
 
   const refreshedStatus = await fetch(proxy.statusUrl + '/status', { cache: 'no-store' }).then((response) => response.json())
-  assert.match(refreshedStatus.pairing_code, /^\\d{6}$/)
+  assert.match(refreshedStatus.pairing_code, /^\d{6}$/)
   assert.notEqual(refreshedStatus.pairing_code, proxy.code)
 })
 
