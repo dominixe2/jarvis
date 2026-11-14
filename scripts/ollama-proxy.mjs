@@ -237,6 +237,7 @@ const server = createServer(async (req, res) => {
 
   if (req.url === '/api/unpair') {
     try { await readBody(req) } catch { return json(res, 413, { error: 'Požadavek je příliš velký.' }) }
+    if (!hasValidSession(req)) return json(res, 401, { error: 'Zařízení není spárované nebo relace vypršela.' })
     const token = readCookie(req, COOKIE_NAME)
     if (token) sessions.delete(hashSessionToken(token))
     if (sessions.size === 0) rotatePairingCode()
