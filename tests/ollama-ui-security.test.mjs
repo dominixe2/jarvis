@@ -15,10 +15,10 @@ test('JARVIS browser pairing never stores or sends a bearer secret through JavaS
 })
 
 test('Ollama relay and local pairing status page bind only to loopback', () => {
-  assert.match(proxy, /server\\.listen\\(PORT, ['"]127\\.0\\.0\\.1['"]/)
-  assert.match(proxy, /statusServer\\.listen\\(STATUS_PORT, ['"]127\\.0\\.0\\.1['"]/)
+  assert.ok(proxy.includes("server.listen(PORT, '127.0.0.1'"))
+  assert.ok(proxy.includes("statusServer.listen(STATUS_PORT, '127.0.0.1'"))
 })
 
 test('Vite keeps pairing, status, unpair and chat paths on the same-origin relay', () => {
-  assert.match(vite, /path\\.replace\\(\\/\\^\\\\\\/api\\\\\\/ollama\\//)
+  assert.ok(vite.includes("rewrite: (path) => path.replace(/^\\\\/api\\\\/ollama/, '/api'),"))
 })
