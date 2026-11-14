@@ -1,18 +1,22 @@
-import { randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 
-export function createPairingToken() {
+export function createPairingCode() {
+  return randomInt(0, 1_000_000).toString().padStart(6, '0')
+}
+
+export function createSessionToken() {
   return randomBytes(32).toString('base64url')
 }
 
-export function hasValidBearerToken(header, expectedToken) {
-  if (typeof header !== 'string' || typeof expectedToken !== 'string') return false
-  const prefix = 'Bearer '
-  if (!header.startsWith(prefix)) return false
-  const candidateText = header.slice(prefix.length)
-  if (!candidateText || candidateText.length !== expectedToken.length) return false
-  const candidate = Buffer.from(candidateText, 'utf8')
-  const expected = Buffer.from(expectedToken, 'utf8')
-  return candidate.length === expected.length && timingSafeEqual(candidate, expected)
+export function hashSessionToken(token) {
+  return createHash('sha256').update(token, 'utf8').digest('hex')
+}
+
+export function safeEqualText(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string') return false
+  const a = Buffer.from(left, 'utf8')
+  const b = Buffer.from(right, 'utf8')
+  return a.length === b.length && timingSafeEqual(a, b)
 }
 
 export function isAllowedOrigin(origin, hostHeader) {
