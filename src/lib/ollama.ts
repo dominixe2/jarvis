@@ -10,6 +10,11 @@ import type { AskHandlers, Msg } from './anthropic'
  */
 let active: AbortController | null = null
 
+// Remove the obsolete per-tab bearer token from the previous implementation.
+if (typeof window !== 'undefined') {
+  try { window.sessionStorage.removeItem('jarvis_ollama_pairing_token') } catch { /* storage may be disabled */ }
+}
+
 function textOf(content: unknown): string {
   if (typeof content === 'string') return content
   if (!Array.isArray(content)) return ''
