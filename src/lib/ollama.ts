@@ -56,7 +56,7 @@ export async function checkOllamaPairing(): Promise<boolean> {
 
 export async function pairOllama(code: string): Promise<void> {
   const normalized = code.trim()
-  if (!/^\\d{6}$/.test(normalized)) throw new Error('Párovací kód musí mít přesně šest číslic.')
+  if (!/^\d{6}$/.test(normalized)) throw new Error('Párovací kód musí mít přesně šest číslic.')
   const response = await post('pair', { code: normalized })
   const data = await response.json().catch(() => ({})) as { error?: string; paired?: boolean }
   if (!response.ok || data.paired !== true) {
@@ -79,7 +79,7 @@ export async function ask(
   let text = ''
 
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT + '\\n\\nDŮLEŽITÉ PRO TENTO REŽIM: Běžíš jako lokální chat bez nástrojů. Nemáš přístup k souborům, aplikacím, internetu ani ovládání PC. Nikdy netvrď, že jsi něco provedl na zařízení, pokud jsi pouze popsal postup. Odpovídej česky, pokud uživatel nepoužije jiný jazyk.' },
+    { role: 'system', content: SYSTEM_PROMPT + '\n\nDŮLEŽITÉ PRO TENTO REŽIM: Běžíš jako lokální chat bez nástrojů. Nemáš přístup k souborům, aplikacím, internetu ani ovládání PC. Nikdy netvrď, že jsi něco provedl na zařízení, pokud jsi pouze popsal postup. Odpovídej česky, pokud uživatel nepoužije jiný jazyk.' },
     ...history
       .filter((message) => message.role === 'user' || message.role === 'assistant')
       .map((message) => ({
@@ -116,7 +116,7 @@ export async function ask(
       const { value, done } = await reader.read()
       if (done) break
       buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\\n')
+      const lines = buffer.split('\n')
       buffer = lines.pop() ?? ''
       for (const line of lines) {
         if (!line.trim()) continue
