@@ -249,3 +249,34 @@ test('Ollama upstream error details are not reflected to the paired client', asy
   assert.match(response.body, /Ollama vrátila HTTP 502/)
   assert.doesNotMatch(response.body, /PRIVATE_PROMPT_FRAGMENT|upstream-secret/)
 })
+
+
+test('phone pairing rejects plain HTTP on a LAN and marks HTTPS sessions Secure', async (t) => {
+  const upstream = createServer((_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson' })
+    res.end('{"message":{"content":"secure test"},"done":true}\\n')
+  })
+  const upstreamPort = await listen(upstream)
+  let proxy
+  t.after(async () => {
+    if (proxy) await proxy.stop()
+    await close(upstream)
+  })
+  proxy = await startProxy(upstreamPort)
+
+  const insecure = await requestJson(proxy.port, '/api/pair', {
+    origin: 'http://192.168.1.44:5173',
+    host: '192.168.1.44:5173',
+    body: { code: proxy.code },
+  })
+  assert.equal(insecure.status, 403)
+
+  const secure = await requestJson(proxy.port, '/api/pair', {
+    origin: 'https://192.168.1.44:5173',
+    host: '192.168.1.44:5173',
+    body: { code: proxy.code },
+  })
+  assert.equal(secure.status, 200)
+  assert.match(secure.headers['set-cookie'][0], /Secure/i)
+  assert.match(secure.headers['set-cookie'][0], /HttpOnly/i)
+})
