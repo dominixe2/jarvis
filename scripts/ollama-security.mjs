@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
+import { isIP } from 'node:net'
 
 export function createPairingCode() {
   return randomInt(0, 1_000_000).toString().padStart(6, '0')
@@ -19,6 +20,36 @@ export function safeEqualText(left, right) {
   return a.length === b.length && timingSafeEqual(a, b)
 }
 
+function isLocalNetworkHostname(hostname) {
+  const normalized = String(hostname || '')
+    .replace(/^\\[|\\]$/g, '')
+    .replace(/\\.$/, '')
+    .toLowerCase()
+
+  if (normalized === 'localhost' || normalized.endsWith('.localhost') || normalized.endsWith('.local')) {
+    return true
+  }
+
+  if (isIP(normalized) === 4) {
+    const [a, b] = normalized.split('.').map(Number)
+    return (
+      a === 10 ||
+      a === 127 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254) ||
+      (a === 100 && b >= 64 && b <= 127)
+    )
+  }
+
+  if (isIP(normalized) === 6) {
+    return normalized === '::1' || normalized.startsWith('fc') ||
+      normalized.startsWith('fd') || /^fe[89ab]/.test(normalized)
+  }
+
+  return false
+}
+
 export function isAllowedOrigin(origin, hostHeader) {
   if (!origin || !hostHeader) return false
   let originUrl
@@ -35,6 +66,7 @@ export function isAllowedOrigin(origin, hostHeader) {
   if (requestUrl.username || requestUrl.password || requestUrl.pathname !== '/' || requestUrl.search || requestUrl.hash) return false
   if (requestUrl.protocol !== originUrl.protocol) return false
   if (originUrl.hostname !== requestUrl.hostname || originUrl.port !== requestUrl.port) return false
+  if (!isLocalNetworkHostname(originUrl.hostname)) return false
 
   const port = Number(originUrl.port || (originUrl.protocol === 'https:' ? 443 : 80))
   return (port >= 5173 && port <= 5199) || (port >= 4173 && port <= 4199)
