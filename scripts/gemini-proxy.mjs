@@ -96,8 +96,8 @@ function readBackend() {
   try {
     const raw = readFileSync(envFile, 'utf8')
     const match = raw.match(/^\s*VITE_BACKEND\s*=\s*(.*?)\s*$/m)
-    return match?.[1]?.replace(/^(['"])(.*)\1$/, '$2').trim() || 'gemini'
-  } catch { return 'gemini' }
+    return match?.[1]?.replace(/^(['"])(.*)\1$/, '$2').trim() || 'ollama'
+  } catch { return 'ollama' }
 }
 
 function saveBackend(backend) {
@@ -292,7 +292,7 @@ const server = createServer(async (req, res) => {
     try {
       const body = await readJson(req, 16_000)
       const backend = body.backend
-      if (backend !== 'bridge' && backend !== 'gemini') return sendJson(res, 400, { error: 'Vyber režim bridge nebo gemini.' })
+      if (backend !== 'bridge' && backend !== 'gemini' && backend !== 'ollama') return sendJson(res, 400, { error: 'Vyber režim bridge, gemini nebo ollama.' })
       saveBackend(backend)
       return sendJson(res, 200, { backend, restartRequired: true })
     } catch (error) {

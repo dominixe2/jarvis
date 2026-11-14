@@ -2,6 +2,7 @@ import { BACKEND } from '../config'
 import * as direct from './anthropic'
 import * as bridge from './bridge'
 import * as gemini from './gemini'
+import * as ollama from './ollama'
 import type { AskHandlers, Msg } from './anthropic'
 import type { Blade, Panel } from '../store'
 
@@ -23,6 +24,7 @@ export type { ConnectionState } from './bridge'
 
 export const usingBridge = BACKEND === 'bridge'
 export const usingGemini = BACKEND === 'gemini'
+export const usingOllama = BACKEND === 'ollama'
 
 /** Conversation state lives in the bridge session, so history is only threaded
  *  through on the direct path. */
@@ -33,7 +35,7 @@ export async function ask(
 ): Promise<{ text: string; tools: string[] }> {
   if (usingBridge) return bridge.ask(prompt, handlers)
   const messages = [...history, { role: 'user' as const, content: prompt }]
-  return usingGemini ? gemini.ask(messages, handlers) : direct.ask(messages, handlers)
+  return usingGemini ? gemini.ask(messages, handlers) : usingOllama ? ollama.ask(messages, handlers) : direct.ask(messages, handlers)
 }
 
 export async function warm(): Promise<void> {
@@ -95,6 +97,7 @@ export function watchCapture(
 export function cancel(): void {
   if (usingBridge) bridge.cancel()
   else if (usingGemini) gemini.cancel()
+  else if (usingOllama) ollama.cancel()
   else direct.cancel()
 }
 
@@ -131,5 +134,5 @@ export function watchConnection(
 /** Labels for the HUD's SYSTEMS rail. */
 export function connectedLabels(): string[] {
   if (usingBridge) return bridge.bridgeServers()
-  return usingGemini ? gemini.connectedLabels() : direct.connectedLabels()
+  return usingGemini ? gemini.connectedLabels() : usingOllama ? ollama.connectedLabels() : direct.connectedLabels()
 }
