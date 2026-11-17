@@ -7,11 +7,15 @@ on:
     branches: [main, "security/**", "ci/**"]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    branches: [main]
+    branches: [main, "security/**", "ci/**"]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: jarvis-validation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
