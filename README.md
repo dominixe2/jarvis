@@ -27,6 +27,13 @@ The default backend is now local Ollama, which needs no API key. Gemini 3.8 Flas
 
 The default language is Czech. Browser speech recognition requests `cs-CZ`, and spoken output prefers an installed Czech system voice. The phone-on-Wi-Fi relay accepts loopback, private LAN, ULA IPv6 and `.local` origins only; public internet hostnames and public IP addresses are rejected even when their `Origin` and `Host` headers match. For best results, use a current Chrome or Edge build and install a Czech speech voice in Windows if none is available. Wake-word recognition and the free browser voice path require an active internet connection in supported browsers.
 
+## Local network exposure
+
+The Vite development server binds to 127.0.0.1 by default. Phone-on-Wi-Fi access is enabled only when both JARVIS_HTTPS_CERT and JARVIS_HTTPS_KEY point to a certificate and matching private key trusted by the Android device and the notebook. If only one path is configured, startup fails closed. Do not port-forward the development server to the public internet.
+
+The Ollama relay and computer-control bridge remain separate: the Ollama relay is chat-only and paired through its HttpOnly session; the computer-control bridge remains loopback-only. HTTPS on Vite does not expose the local bridge to the LAN.
+
+
 To enable write-capable local tools in bridge mode, start from a terminal in the project folder with `npm start -- --writes`. This is an opt-in mode because the configured tools may run commands or modify files. Start without `--writes` for read-only operation. Do not expose the local bridge to the public internet.
 
 ### Gemini backend
