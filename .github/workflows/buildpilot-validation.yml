@@ -2,7 +2,7 @@ name: BuildPilot validation
 
 on:
   push:
-    branches: [feature/buildpilot-autonomous-worker]
+    branches: [feature/buildpilot-autonomous-worker, 'security/**']
     paths:
       - 'buildpilot/**'
       - '.github/workflows/buildpilot-validation.yml'
