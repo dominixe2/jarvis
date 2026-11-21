@@ -1,0 +1,34 @@
+name: BuildPilot validation
+
+on:
+  push:
+    branches: [feature/buildpilot-autonomous-worker]
+    paths:
+      - 'buildpilot/**'
+      - '.github/workflows/buildpilot-validation.yml'
+  pull_request:
+    paths:
+      - 'buildpilot/**'
+      - '.github/workflows/buildpilot-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate JavaScript syntax
+        run: |
+          node --check buildpilot/src/store.mjs
+          node --check buildpilot/src/policy.mjs
+          node --check buildpilot/src/worker.mjs
+          node --check buildpilot/src/server.mjs
+      - name: Run BuildPilot unit tests
+        run: node --test buildpilot/tests/*.test.mjs
