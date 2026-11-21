@@ -43,8 +43,9 @@ async function removeDeadLock(lockPath) {
     if (Date.now() - before.mtimeMs < 30000) return false
   }
 
-  if (metadata && await processIsAlive(metadata.pid)) return false
-  if (metadata && !Number.isSafeInteger(metadata.pid)) return false
+  const validPid = Number.isSafeInteger(metadata?.pid) && metadata.pid > 0
+  if (validPid && await processIsAlive(metadata.pid)) return false
+  if (!validPid && Date.now() - before.mtimeMs < 30000) return false
 
   try {
     const current = await lstat(lockPath)
