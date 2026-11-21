@@ -83,7 +83,10 @@ async function readBody(request) {
   const declared = request.headers['content-length']
   if (declared !== undefined) {
     if (!/^\d+$/.test(String(declared))) throw Object.assign(new Error(), { code: 'INVALID_LENGTH' })
-    if (Number(declared) > MAX_BODY_BYTES) throw Object.assign(new Error(), { code: 'BODY_TOO_LARGE' })
+    if (Number(declared) > MAX_BODY_BYTES) {
+      request.resume()
+      throw Object.assign(new Error(), { code: 'BODY_TOO_LARGE' })
+    }
   }
 
   const chunks = []
