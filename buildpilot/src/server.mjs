@@ -49,14 +49,16 @@ function allowedLoopbackHost(value) {
   }
 }
 
-function allowedOrigin(value) {
-  if (typeof value !== 'string' || !value) return false
+function allowedOrigin(value, hostHeader) {
+  if (typeof value !== 'string' || !value || typeof hostHeader !== 'string' || !hostHeader) return false
   try {
     const url = new URL(value)
+    const requestHost = new URL('http://' + hostHeader)
     return (
       url.protocol === 'http:' &&
       ['127.0.0.1', 'localhost'].includes(url.hostname) &&
       url.port === expectedPort &&
+      url.host.toLowerCase() === requestHost.host.toLowerCase() &&
       !url.username && !url.password &&
       url.pathname === '/' && !url.search && !url.hash
     )
@@ -166,7 +168,7 @@ async function handleRequest(request, response) {
   if (String(request.headers['sec-fetch-site'] || '').toLowerCase() === 'cross-site') {
     return send(response, 403, { error: 'Cross-site request blocked.' })
   }
-  if (request.headers.origin !== undefined && !allowedOrigin(request.headers.origin)) {
+  if (request.headers.origin !== undefined && !allowedOrigin(request.headers.origin, request.headers.host)) {
     return send(response, 403, { error: 'Origin not allowed.' })
   }
   if (!authorised(request)) return send(response, 401, { error: 'Unauthorized.' })

@@ -186,3 +186,26 @@ test('creates a redacted job view and requires explicit human approval', async (
   })
   assert.equal(duplicate.status, 409)
 })
+
+
+test('requires an allowed Origin to match the exact loopback Host alias', async () => {
+  const port = new URL(baseUrl).port
+  const mismatch = await request('/health', {
+    headers: {
+      ...auth,
+      host: '127.0.0.1:' + port,
+      origin: 'http://localhost:' + port,
+    },
+  })
+  assert.equal(mismatch.status, 403)
+  assert.equal(mismatch.json().error, 'Origin not allowed.')
+
+  const matching = await request('/health', {
+    headers: {
+      ...auth,
+      host: '127.0.0.1:' + port,
+      origin: 'http://127.0.0.1:' + port,
+    },
+  })
+  assert.equal(matching.status, 200)
+})
