@@ -2,7 +2,7 @@ name: BuildPilot validation
 
 on:
   push:
-    branches: [feature/buildpilot-autonomous-worker]
+    branches: [feature/buildpilot-autonomous-worker, 'security/**']
     paths:
       - 'buildpilot/**'
       - '.github/workflows/buildpilot-validation.yml'
@@ -20,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Validate JavaScript syntax
