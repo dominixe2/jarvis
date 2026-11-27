@@ -43,6 +43,14 @@ Use Node.js 20 or newer. Install dependencies with `npm install`, then run `npm 
 
 Springtrap's 3D character, animations, interaction logic, and character-specific AI live in the separate [Springtrap repository](https://github.com/dominixe2/springtrap-). Keep this JARVIS repository focused on the assistant HUD, voice loop, and computer-control bridge.
 
+## Local network exposure
+
+JARVIS binds its Vite development server to `127.0.0.1` by default. This keeps the UI local to the notebook and prevents accidental plaintext HTTP exposure to other devices on Wi-Fi.
+
+To enable phone-on-Wi-Fi access, configure both `JARVIS_HTTPS_CERT` and `JARVIS_HTTPS_KEY` with a certificate whose name matches the notebook URL and whose issuing CA is trusted by the Android device. Only then does Vite bind to the LAN interface and serve HTTPS. If either file is missing, the server stays on loopback; if only one path is configured, startup fails closed.
+
+Do not port-forward the development server to the public internet.
+
 ## Security
 
 - Never commit API keys, tokens, or credentials.
